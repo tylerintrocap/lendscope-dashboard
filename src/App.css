@@ -356,6 +356,7 @@ tbody tr:hover {
   background: #e0e0e0;
 }
 
+/* ── Login Screen ── */
 .login-screen {
   min-height: 100vh;
   display: flex;
@@ -366,23 +367,23 @@ tbody tr:hover {
 }
 
 .login-container {
-  background: white;
+  background: #003F91;
   padding: 50px;
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   text-align: center;
   max-width: 400px;
   width: 100%;
 }
 
 .login-logo {
-  height: 80px;
+  height: 50px;
   width: auto;
   margin-bottom: 20px;
 }
 
 .login-title {
-  color: #FF3366;
+  color: white;
   font-family: 'Montserrat', sans-serif;
   font-size: 24px;
   margin-bottom: 30px;
@@ -402,22 +403,28 @@ tbody tr:hover {
 
 .form-group label {
   margin-bottom: 5px;
-  color: #3c3c3c;
+  color: rgba(255, 255, 255, 0.85);
   font-weight: 600;
   font-size: 14px;
 }
 
 .form-group input {
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 6px;
   font-size: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .form-group input:focus {
   outline: none;
   border-color: #FF3366;
-  box-shadow: 0 0 0 3px rgba(255, 51, 102, 0.1);
+  box-shadow: 0 0 0 3px rgba(255, 51, 102, 0.3);
 }
 
 .login-button {
@@ -437,8 +444,8 @@ tbody tr:hover {
 }
 
 .login-error {
-  background: #fee;
-  color: #c33;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffcccc;
   padding: 10px;
   border-radius: 6px;
   font-size: 14px;
@@ -585,7 +592,7 @@ tbody tr:hover {
   }
 
   .login-logo {
-    height: 60px;
+    height: 40px;
   }
 
   .login-title {
