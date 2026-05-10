@@ -39,7 +39,23 @@ const App = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (dateRange === '7d') {
+    if (dateRange === 'today') {
+      if (direction === -1) {
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        setCustomDates({ start: yesterday.toISOString().split('T')[0], end: yesterday.toISOString().split('T')[0] });
+        setDateRange('custom');
+      }
+    } else if (dateRange === 'yesterday') {
+      if (direction === -1) {
+        const twoDaysAgo = new Date(today);
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+        setCustomDates({ start: twoDaysAgo.toISOString().split('T')[0], end: twoDaysAgo.toISOString().split('T')[0] });
+        setDateRange('custom');
+      } else {
+        setDateRange('today');
+      }
+    } else if (dateRange === '7d') {
       const newEnd = new Date(today);
       newEnd.setDate(newEnd.getDate() + (direction * 7));
       const newStart = new Date(newEnd);
@@ -79,6 +95,15 @@ const App = () => {
     endDate.setHours(23, 59, 59, 999);
 
     switch(dateRange) {
+      case 'today':
+        startDate = new Date(today);
+        break;
+      case 'yesterday':
+        startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 1);
+        endDate = new Date(startDate);
+        endDate.setHours(23, 59, 59, 999);
+        break;
       case '7d':
         startDate = new Date(today);
         startDate.setDate(startDate.getDate() - 7);
@@ -91,6 +116,8 @@ const App = () => {
         startDate = new Date(today);
         startDate.setDate(startDate.getDate() - 90);
         break;
+      case 'alltime':
+        return null; // No date filter
       case 'custom':
         if (!customDates.start || !customDates.end) return null;
         startDate = new Date(customDates.start);
@@ -415,14 +442,17 @@ const App = () => {
 
   const headerControls = (
     <div className="header-controls">
-      <button onClick={() => shiftDateRange(-1)} className="arrow-btn">←</button>
+      <button onClick={() => shiftDateRange(-1)} className="arrow-btn" disabled={dateRange === 'alltime'}>←</button>
       {dateRange !== 'custom' ? (
         <select value={dateRange} onChange={(e) => {
           if (e.target.value === 'custom') { setShowDatePicker(true); } else { setDateRange(e.target.value); }
         }}>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
           <option value="7d">Last 7 days</option>
           <option value="30d">Last 30 days</option>
           <option value="90d">Last 90 days</option>
+          <option value="alltime">All Time</option>
           <option value="custom">Custom Range</option>
         </select>
       ) : (
@@ -431,7 +461,7 @@ const App = () => {
           <button onClick={() => setShowDatePicker(true)}>Edit</button>
         </div>
       )}
-      <button onClick={() => shiftDateRange(1)} className="arrow-btn">→</button>
+      <button onClick={() => shiftDateRange(1)} className="arrow-btn" disabled={dateRange === 'alltime' || dateRange === 'today'}>→</button>
       <button onClick={fetchData} className="refresh-btn">Refresh</button>
     </div>
   );
@@ -502,6 +532,7 @@ const App = () => {
   }
 
   // Admin Dashboard
+  const filteredAdminLeads = getFilteredLeads(displayLeads);
   return (
     <div className="dashboard">
       <div className="header">
@@ -601,7 +632,7 @@ const App = () => {
             <BarChart data={getMortgageStageData()}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="stage" />
-              <YAxis />
+              <YAxis allowDecimals={false} />
               <Tooltip />
               <Legend />
               <Bar dataKey="total" fill={chartColors.primary} name="Total" />
@@ -618,7 +649,7 @@ const App = () => {
             <BarChart data={getRemortgageStageData()}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="stage" />
-              <YAxis />
+              <YAxis allowDecimals={false} />
               <Tooltip />
               <Legend />
               <Bar dataKey="total" fill={chartColors.primary} name="Total" />
@@ -632,7 +663,7 @@ const App = () => {
             <BarChart data={getMortgagePropertyRanges()}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="range" />
-              <YAxis />
+              <YAxis allowDecimals={false} />
               <Tooltip />
               <Bar dataKey="count" fill={chartColors.primary} />
             </BarChart>
@@ -646,7 +677,7 @@ const App = () => {
           <BarChart data={getRemortgagePropertyRanges()}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="range" />
-            <YAxis />
+            <YAxis allowDecimals={false} />
             <Tooltip />
             <Bar dataKey="count" fill={chartColors.secondary} />
           </BarChart>
@@ -654,7 +685,16 @@ const App = () => {
       </div>
 
       <div className="leads-table-card">
-        <h3>All Leads for Selected Period ({displayLeads.length})</h3>
+        <div className="leads-table-header">
+          <h3>All Leads for Selected Period ({filteredAdminLeads.length}{searchQuery ? ` of ${displayLeads.length}` : ''})</h3>
+          <input
+            type="text"
+            className="leads-search"
+            placeholder="Search by name or phone number..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
         <table>
           <thead>
             <tr>
@@ -667,10 +707,12 @@ const App = () => {
             </tr>
           </thead>
           <tbody>
-            {displayLeads.length === 0 ? (
-              <tr><td colSpan="6" style={{textAlign: 'center', padding: '40px'}}>No leads for this period</td></tr>
+            {filteredAdminLeads.length === 0 ? (
+              <tr><td colSpan="6" style={{textAlign: 'center', padding: '40px'}}>
+                {searchQuery ? 'No leads match your search' : 'No leads for this period'}
+              </td></tr>
             ) : (
-              displayLeads.map(lead => (
+              filteredAdminLeads.map(lead => (
                 <tr key={lead.id}>
                   <td>{lead.fields.First_Name && lead.fields.Last_Name ? `${lead.fields.First_Name} ${lead.fields.Last_Name}`.trim() : lead.fields.First_Name || lead.fields.Last_Name || 'No name'}</td>
                   <td>{lead.fields.Date ? new Date(lead.fields.Date).toLocaleDateString('en-GB') : 'N/A'}</td>
