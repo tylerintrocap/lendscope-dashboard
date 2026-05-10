@@ -222,22 +222,25 @@ const App = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customDates, dateRange, isAuthenticated]);
 
-  const handleLeadAction = async (leadId, leadType, field) => {
+  // Phone Answered is one-way only (can't uncheck)
+  // Appointment Booked and DIP Agreed are toggleable
+  const handleLeadAction = async (leadId, leadType, field, currentValue) => {
     try {
       const tableName = leadType === 'Mortgage' ? 'BTL Mortgage Lead Data' : 'BTL Remortgage Lead Data';
-      await callAPI(tableName, 'PATCH', leadId, { [field]: true });
+      const newValue = !currentValue;
+      await callAPI(tableName, 'PATCH', leadId, { [field]: newValue });
 
       setDisplayLeads(prev => prev.map(lead =>
-        lead.id === leadId ? { ...lead, fields: { ...lead.fields, [field]: true } } : lead
+        lead.id === leadId ? { ...lead, fields: { ...lead.fields, [field]: newValue } } : lead
       ));
 
       if (leadType === 'Mortgage') {
         setMortgageLeads(prev => prev.map(lead =>
-          lead.id === leadId ? { ...lead, fields: { ...lead.fields, [field]: true } } : lead
+          lead.id === leadId ? { ...lead, fields: { ...lead.fields, [field]: newValue } } : lead
         ));
       } else {
         setRemortgageLeads(prev => prev.map(lead =>
-          lead.id === leadId ? { ...lead, fields: { ...lead.fields, [field]: true } } : lead
+          lead.id === leadId ? { ...lead, fields: { ...lead.fields, [field]: newValue } } : lead
         ));
       }
     } catch (err) {
@@ -384,6 +387,34 @@ const App = () => {
     );
   };
 
+  // Reusable lead action buttons
+  const renderLeadActions = (lead) => (
+    <td>
+      {/* Phone Answered - one way only */}
+      <button
+        disabled={lead.fields['Phone Answered']}
+        onClick={() => handleLeadAction(lead.id, lead.type, 'Phone Answered', lead.fields['Phone Answered'])}
+        className="action-btn"
+      >
+        {lead.fields['Phone Answered'] ? 'Answered ✓' : 'Answered Phone'}
+      </button>
+      {/* Appointment Booked - toggleable */}
+      <button
+        onClick={() => handleLeadAction(lead.id, lead.type, 'Appointment Booked', lead.fields['Appointment Booked'])}
+        className={`action-btn${lead.fields['Appointment Booked'] ? ' active' : ''}`}
+      >
+        {lead.fields['Appointment Booked'] ? 'Booked ✓' : 'Appointment Booked'}
+      </button>
+      {/* DIP Agreed - toggleable */}
+      <button
+        onClick={() => handleLeadAction(lead.id, lead.type, 'DIP Agreed', lead.fields['DIP Agreed'])}
+        className={`action-btn success${lead.fields['DIP Agreed'] ? ' active' : ''}`}
+      >
+        {lead.fields['DIP Agreed'] ? 'Agreed ✓' : 'DIP Agreed'}
+      </button>
+    </td>
+  );
+
   if (!isAuthenticated) {
     return (
       <div className="login-screen">
@@ -526,17 +557,7 @@ const App = () => {
                     <td>{lead.fields.Date ? new Date(lead.fields.Date).toLocaleDateString('en-GB') : 'N/A'}</td>
                     <td><span className={`badge ${lead.type.toLowerCase()}`}>{lead.type}</span></td>
                     <td>{lead.fields.Phone || 'N/A'}</td>
-                    <td>
-                      <button disabled={lead.fields['Phone Answered']} onClick={() => handleLeadAction(lead.id, lead.type, 'Phone Answered')} className="action-btn">
-                        {lead.fields['Phone Answered'] ? 'Answered ✓' : 'Answered Phone'}
-                      </button>
-                      <button disabled={lead.fields['Appointment Booked']} onClick={() => handleLeadAction(lead.id, lead.type, 'Appointment Booked')} className="action-btn">
-                        {lead.fields['Appointment Booked'] ? 'Booked ✓' : 'Appointment Booked'}
-                      </button>
-                      <button disabled={lead.fields['DIP Agreed']} onClick={() => handleLeadAction(lead.id, lead.type, 'DIP Agreed')} className="action-btn success">
-                        {lead.fields['DIP Agreed'] ? 'Agreed ✓' : 'DIP Agreed'}
-                      </button>
-                    </td>
+                    {renderLeadActions(lead)}
                   </tr>
                 ))
               )}
@@ -735,17 +756,7 @@ const App = () => {
                   <td><span className={`badge ${lead.type.toLowerCase()}`}>{lead.type}</span></td>
                   <td>{lead.fields.Phone || 'N/A'}</td>
                   <td>{lead.fields.Stage || 'N/A'}</td>
-                  <td>
-                    <button disabled={lead.fields['Phone Answered']} onClick={() => handleLeadAction(lead.id, lead.type, 'Phone Answered')} className="action-btn">
-                      {lead.fields['Phone Answered'] ? 'Answered ✓' : 'Answered Phone'}
-                    </button>
-                    <button disabled={lead.fields['Appointment Booked']} onClick={() => handleLeadAction(lead.id, lead.type, 'Appointment Booked')} className="action-btn">
-                      {lead.fields['Appointment Booked'] ? 'Booked ✓' : 'Appointment Booked'}
-                    </button>
-                    <button disabled={lead.fields['DIP Agreed']} onClick={() => handleLeadAction(lead.id, lead.type, 'DIP Agreed')} className="action-btn success">
-                      {lead.fields['DIP Agreed'] ? 'Agreed ✓' : 'DIP Agreed'}
-                    </button>
-                  </td>
+                  {renderLeadActions(lead)}
                 </tr>
               ))
             )}

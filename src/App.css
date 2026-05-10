@@ -727,4 +727,8 @@ tbody tr:hover {
   .login-container {
     padding: 25px 15px;
   }
+
+  .action-btn.active {
+  opacity: 0.6;
+  }
 }
