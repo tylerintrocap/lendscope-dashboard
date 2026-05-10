@@ -250,11 +250,30 @@ const App = () => {
     const totalCost = googleCostData.reduce((sum, r) => sum + (r.fields.Cost || 0), 0);
     const totalRawLeads = mortgageLeads.length + remortgageLeads.length + deadMortgageLeads.length + deadRemortgageLeads.length;
     const phoneVerifiedLeads = mortgageLeads.length + remortgageLeads.length;
-    const answeredPhoneLeads = [...mortgageLeads.filter(l => l.fields['Phone Answered']), ...remortgageLeads.filter(l => l.fields['Phone Answered'])].length;
-    const appointmentBookedLeads = [...mortgageLeads.filter(l => l.fields['Appointment Booked']), ...remortgageLeads.filter(l => l.fields['Appointment Booked'])].length;
+    const allLeads = [...mortgageLeads, ...remortgageLeads];
+
+    // Mortgage stats
+    const mortgageAnswered = mortgageLeads.filter(l => l.fields['Phone Answered']).length;
+    const mortgageBooked = mortgageLeads.filter(l => l.fields['Appointment Booked']).length;
+    const mortgageDIP = mortgageLeads.filter(l => l.fields['DIP Agreed']).length;
+    const mortgagePickupRate = mortgageLeads.length > 0 ? (mortgageAnswered / mortgageLeads.length) * 100 : 0;
+    const mortgageBookingRate = mortgageAnswered > 0 ? (mortgageBooked / mortgageAnswered) * 100 : 0;
+    const mortgageDIPRate = mortgageBooked > 0 ? (mortgageDIP / mortgageBooked) * 100 : 0;
+
+    // Remortgage stats
+    const remortgageAnswered = remortgageLeads.filter(l => l.fields['Phone Answered']).length;
+    const remortgageBooked = remortgageLeads.filter(l => l.fields['Appointment Booked']).length;
+    const remortgageDIP = remortgageLeads.filter(l => l.fields['DIP Agreed']).length;
+    const remortgagePickupRate = remortgageLeads.length > 0 ? (remortgageAnswered / remortgageLeads.length) * 100 : 0;
+    const remortgageBookingRate = remortgageAnswered > 0 ? (remortgageBooked / remortgageAnswered) * 100 : 0;
+    const remortgageDIPRate = remortgageBooked > 0 ? (remortgageDIP / remortgageBooked) * 100 : 0;
+
+    // Overall/combined stats
+    const answeredPhoneLeads = allLeads.filter(l => l.fields['Phone Answered']).length;
+    const appointmentBookedLeads = allLeads.filter(l => l.fields['Appointment Booked']).length;
+    const dipAgreedCount = allLeads.filter(l => l.fields['DIP Agreed']).length;
     const pickupRate = phoneVerifiedLeads > 0 ? (answeredPhoneLeads / phoneVerifiedLeads) * 100 : 0;
     const appointmentBookingRate = answeredPhoneLeads > 0 ? (appointmentBookedLeads / answeredPhoneLeads) * 100 : 0;
-    const dipAgreedCount = [...mortgageLeads.filter(l => l.fields['DIP Agreed']), ...remortgageLeads.filter(l => l.fields['DIP Agreed'])].length;
     const dipAgreedRate = appointmentBookedLeads > 0 ? (dipAgreedCount / appointmentBookedLeads) * 100 : 0;
 
     return {
@@ -264,7 +283,12 @@ const App = () => {
       costPerAnswered: answeredPhoneLeads > 0 ? totalCost / answeredPhoneLeads : 0,
       costPerMQL: appointmentBookedLeads > 0 ? totalCost / appointmentBookedLeads : 0,
       totalRawLeads, phoneVerifiedLeads, answeredPhoneLeads, appointmentBookedLeads,
-      pickupRate, appointmentBookingRate, dipAgreedRate
+      // Overall
+      pickupRate, appointmentBookingRate, dipAgreedRate,
+      // Mortgage
+      mortgagePickupRate, mortgageBookingRate, mortgageDIPRate,
+      // Remortgage
+      remortgagePickupRate, remortgageBookingRate, remortgageDIPRate,
     };
   };
 
@@ -349,7 +373,6 @@ const App = () => {
     if (!searchQuery.trim()) return leads;
     const q = searchQuery.toLowerCase().trim();
 
-    // Build alternate phone format so 07... matches +447... and vice versa
     let altQ = null;
     if (q.startsWith('0')) {
       altQ = '+44' + q.slice(1);
@@ -419,6 +442,59 @@ const App = () => {
         {lead.fields['DIP Agreed'] ? 'Agreed ✓' : 'DIP Agreed'}
       </button>
     </td>
+  );
+
+  // Reusable Sales Performance section
+  const renderSalesPerformance = () => (
+    <>
+      <h2>Sales Performance — BTL Mortgage</h2>
+      <div className="metrics-grid-3">
+        <div className="metric-card" style={getGradientStyle('#FF3366', 0.9)}>
+          <div className="metric-value">{metrics.mortgagePickupRate.toFixed(1)}%</div>
+          <div className="metric-label">Pick Up Rate</div>
+        </div>
+        <div className="metric-card" style={getGradientStyle('#FF3366', 0.9)}>
+          <div className="metric-value">{metrics.mortgageBookingRate.toFixed(1)}%</div>
+          <div className="metric-label">Appointment Booking Rate</div>
+        </div>
+        <div className="metric-card" style={getGradientStyle('#FF3366', 0.9)}>
+          <div className="metric-value">{metrics.mortgageDIPRate.toFixed(1)}%</div>
+          <div className="metric-label">DIP Agreed Rate</div>
+        </div>
+      </div>
+
+      <h2>Sales Performance — BTL Remortgage</h2>
+      <div className="metrics-grid-3">
+        <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
+          <div className="metric-value">{metrics.remortgagePickupRate.toFixed(1)}%</div>
+          <div className="metric-label">Pick Up Rate</div>
+        </div>
+        <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
+          <div className="metric-value">{metrics.remortgageBookingRate.toFixed(1)}%</div>
+          <div className="metric-label">Appointment Booking Rate</div>
+        </div>
+        <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
+          <div className="metric-value">{metrics.remortgageDIPRate.toFixed(1)}%</div>
+          <div className="metric-label">DIP Agreed Rate</div>
+        </div>
+      </div>
+
+      <h2>Sales Performance — Overall</h2>
+      <div className="metrics-grid-3">
+        <div className="metric-card" style={{ backgroundColor: '#3c3c3c', borderColor: '#3c3c3c' }}>
+          <div className="metric-value">{metrics.pickupRate.toFixed(1)}%</div>
+          <div className="metric-label">Pick Up Rate</div>
+        </div>
+        <div className="metric-card" style={{ backgroundColor: '#3c3c3c', borderColor: '#3c3c3c' }}>
+          <div className="metric-value">{metrics.appointmentBookingRate.toFixed(1)}%</div>
+          <div className="metric-label">Appointment Booking Rate</div>
+        </div>
+        <div className="metric-card" style={{ backgroundColor: '#3c3c3c', borderColor: '#3c3c3c' }}>
+          <div className="metric-value">{metrics.dipAgreedRate.toFixed(1)}%</div>
+          <div className="metric-label">DIP Agreed Rate</div>
+        </div>
+      </div>
+    </>
   );
 
   if (!isAuthenticated) {
@@ -514,21 +590,7 @@ const App = () => {
         </div>
         {datePickerModal}
 
-        <h2>Sales Performance</h2>
-        <div className="metrics-grid-3">
-          <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
-            <div className="metric-value">{metrics.pickupRate.toFixed(1)}%</div>
-            <div className="metric-label">Pick Up Rate</div>
-          </div>
-          <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
-            <div className="metric-value">{metrics.appointmentBookingRate.toFixed(1)}%</div>
-            <div className="metric-label">Appointment Booking Rate</div>
-          </div>
-          <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
-            <div className="metric-value">{metrics.dipAgreedRate.toFixed(1)}%</div>
-            <div className="metric-label">DIP Agreed Rate</div>
-          </div>
-        </div>
+        {renderSalesPerformance()}
 
         <div className="leads-table-card">
           <div className="leads-table-header">
@@ -604,21 +666,7 @@ const App = () => {
         </div>
       </div>
 
-      <h2>Sales Performance</h2>
-      <div className="metrics-grid-3">
-        <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
-          <div className="metric-value">{metrics.pickupRate.toFixed(1)}%</div>
-          <div className="metric-label">Pick Up Rate</div>
-        </div>
-        <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
-          <div className="metric-value">{metrics.appointmentBookingRate.toFixed(1)}%</div>
-          <div className="metric-label">Appointment Booking Rate</div>
-        </div>
-        <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
-          <div className="metric-value">{metrics.dipAgreedRate.toFixed(1)}%</div>
-          <div className="metric-label">DIP Agreed Rate</div>
-        </div>
-      </div>
+      {renderSalesPerformance()}
 
       <h2>Lead Breakdown</h2>
       <div className="charts-grid-3">
