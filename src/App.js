@@ -117,7 +117,7 @@ const App = () => {
         startDate.setDate(startDate.getDate() - 90);
         break;
       case 'alltime':
-        return null; // No date filter
+        return null;
       case 'custom':
         if (!customDates.start || !customDates.end) return null;
         startDate = new Date(customDates.start);
@@ -476,6 +476,22 @@ const App = () => {
           {headerControls}
         </div>
         {datePickerModal}
+
+        <h2>Sales Performance</h2>
+        <div className="metrics-grid-3">
+          <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
+            <div className="metric-value">{metrics.pickupRate.toFixed(1)}%</div>
+            <div className="metric-label">Pick Up Rate</div>
+          </div>
+          <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
+            <div className="metric-value">{metrics.appointmentBookingRate.toFixed(1)}%</div>
+            <div className="metric-label">Appointment Booking Rate</div>
+          </div>
+          <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
+            <div className="metric-value">{metrics.dipAgreedRate.toFixed(1)}%</div>
+            <div className="metric-label">DIP Agreed Rate</div>
+          </div>
+        </div>
 
         <div className="leads-table-card">
           <div className="leads-table-header">
