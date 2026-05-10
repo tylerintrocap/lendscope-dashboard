@@ -246,6 +246,16 @@ const App = () => {
     }
   };
 
+  // Airtable percentage fields come back as decimals e.g. 0.25 = 25%
+  // This normalises to a 0-100 scale regardless of how it's stored
+  const normalisePercent = (val) => {
+    if (val === null || val === undefined || val === '') return 0;
+    const num = parseFloat(String(val).replace('%', ''));
+    if (isNaN(num)) return 0;
+    // If stored as decimal (e.g. 0.25), convert to percentage
+    return num <= 1 ? num * 100 : num;
+  };
+
   const calculateMetrics = () => {
     const totalCost = googleCostData.reduce((sum, r) => sum + (r.fields.Cost || 0), 0);
     const totalRawLeads = mortgageLeads.length + remortgageLeads.length + deadMortgageLeads.length + deadRemortgageLeads.length;
@@ -311,17 +321,14 @@ const App = () => {
   };
 
   const get25PercentDeposit = () => {
-    // Strip % sign and parse correctly whether stored as "25" or "25%"
-    const parseDeposit = (val) => parseFloat(String(val || '0').replace('%', ''));
-    const has25 = mortgageLeads.filter(l => parseDeposit(l.fields['Deposit %']) >= 25).length;
-    const no25 = mortgageLeads.filter(l => parseDeposit(l.fields['Deposit %']) < 25).length;
+    const has25 = mortgageLeads.filter(l => normalisePercent(l.fields['Deposit %']) >= 25).length;
+    const no25 = mortgageLeads.filter(l => normalisePercent(l.fields['Deposit %']) < 25).length;
     return [{ name: '25%+ Deposit', value: has25 }, { name: 'Under 25%', value: no25 }];
   };
 
   const getRemortgageLTV = () => {
-    const parseLTV = (val) => parseFloat(String(val || '0').replace('%', ''));
-    const within = remortgageLeads.filter(l => parseLTV(l.fields['LTV']) <= 75).length;
-    const above = remortgageLeads.filter(l => parseLTV(l.fields['LTV']) > 75).length;
+    const within = remortgageLeads.filter(l => normalisePercent(l.fields['LTV']) <= 75).length;
+    const above = remortgageLeads.filter(l => normalisePercent(l.fields['LTV']) > 75).length;
     return [{ name: '75% or Below', value: within }, { name: 'Above 75%', value: above }];
   };
 
