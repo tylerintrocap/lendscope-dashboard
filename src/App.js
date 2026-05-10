@@ -268,7 +268,6 @@ const App = () => {
 
     const answeredPhoneLeads = allLeads.filter(l => l.fields['Phone Answered']).length;
     const appointmentBookedLeads = allLeads.filter(l => l.fields['Appointment Booked']).length;
-    // Fixed: MQL = Phone Answered AND has a Lead Rank
     const answeredMQLLeads = allLeads.filter(l => l.fields['Phone Answered'] && l.fields['Lead Rank']).length;
     const dipAgreedCount = allLeads.filter(l => l.fields['DIP Agreed']).length;
     const pickupRate = phoneVerifiedLeads > 0 ? (answeredPhoneLeads / phoneVerifiedLeads) * 100 : 0;
@@ -312,14 +311,17 @@ const App = () => {
   };
 
   const get25PercentDeposit = () => {
-    const has25 = mortgageLeads.filter(l => parseFloat(l.fields['Deposit %']) >= 25).length;
-    const no25 = mortgageLeads.filter(l => parseFloat(l.fields['Deposit %']) < 25).length;
+    // Strip % sign and parse correctly whether stored as "25" or "25%"
+    const parseDeposit = (val) => parseFloat(String(val || '0').replace('%', ''));
+    const has25 = mortgageLeads.filter(l => parseDeposit(l.fields['Deposit %']) >= 25).length;
+    const no25 = mortgageLeads.filter(l => parseDeposit(l.fields['Deposit %']) < 25).length;
     return [{ name: '25%+ Deposit', value: has25 }, { name: 'Under 25%', value: no25 }];
   };
 
   const getRemortgageLTV = () => {
-    const within = remortgageLeads.filter(l => parseFloat(l.fields['LTV']) <= 75).length;
-    const above = remortgageLeads.filter(l => parseFloat(l.fields['LTV']) > 75).length;
+    const parseLTV = (val) => parseFloat(String(val || '0').replace('%', ''));
+    const within = remortgageLeads.filter(l => parseLTV(l.fields['LTV']) <= 75).length;
+    const above = remortgageLeads.filter(l => parseLTV(l.fields['LTV']) > 75).length;
     return [{ name: '75% or Below', value: within }, { name: 'Above 75%', value: above }];
   };
 
