@@ -1,4 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap');
+@font-face {
+  font-family: 'Mundial Black';
+  src: url('/fonts/Mundial_Bold.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Basic Sans';
+  src: url('/fonts/BasicSans.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
 
 * {
   margin: 0;
@@ -7,7 +19,7 @@
 }
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Basic Sans', sans-serif;
   background-color: #f2f2f2;
 }
 
@@ -61,7 +73,7 @@ body {
 h2 {
   margin: 25px 0 15px 0;
   color: #3c3c3c;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Mundial Black', sans-serif;
   font-size: 20px;
 }
 
@@ -96,12 +108,13 @@ h2 {
   font-size: 36px;
   font-weight: bold;
   margin-bottom: 8px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Mundial Black', sans-serif;
 }
 
 .metric-label {
   font-size: 14px;
   opacity: 0.95;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 .charts-grid {
@@ -127,7 +140,7 @@ h2 {
 
 .chart-card h3 {
   margin-bottom: 15px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Mundial Black', sans-serif;
   color: #3c3c3c;
 }
 
@@ -140,7 +153,7 @@ h2 {
 
 .leads-table-card h3 {
   margin-bottom: 15px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Mundial Black', sans-serif;
   color: #3c3c3c;
 }
 
@@ -155,11 +168,13 @@ th {
   border-bottom: 2px solid #ddd;
   font-weight: 600;
   color: #3c3c3c;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 td {
   padding: 12px;
   border-bottom: 1px solid #eee;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 tbody tr:hover {
@@ -195,6 +210,7 @@ tbody tr:hover {
   background: #FF3366;
   color: white;
   margin-bottom: 4px;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 .action-btn:hover:not(:disabled) {
@@ -227,11 +243,13 @@ tbody tr:hover {
 .error-screen h3 {
   color: #d32f2f;
   margin-bottom: 10px;
+  font-family: 'Mundial Black', sans-serif;
 }
 
 .error-screen p {
   color: #666;
   margin-bottom: 20px;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 .error-screen button {
@@ -241,6 +259,7 @@ tbody tr:hover {
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 .spinner {
@@ -282,6 +301,7 @@ tbody tr:hover {
 .date-picker-content h3 {
   margin-bottom: 20px;
   color: #3c3c3c;
+  font-family: 'Mundial Black', sans-serif;
 }
 
 .date-picker-content label {
@@ -289,6 +309,7 @@ tbody tr:hover {
   margin-bottom: 15px;
   font-weight: 500;
   color: #3c3c3c;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 .date-picker-content input {
@@ -298,6 +319,7 @@ tbody tr:hover {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 .modal-buttons {
@@ -313,6 +335,7 @@ tbody tr:hover {
   border: none;
   cursor: pointer;
   font-size: 14px;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 .modal-buttons button:first-child {
@@ -341,6 +364,7 @@ tbody tr:hover {
   border: 1px solid #ddd;
   border-radius: 6px;
   background: white;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 .custom-date-display button {
@@ -350,6 +374,7 @@ tbody tr:hover {
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 .custom-date-display button:hover {
@@ -384,7 +409,7 @@ tbody tr:hover {
 
 .login-title {
   color: white;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Mundial Black', sans-serif;
   font-size: 24px;
   margin-bottom: 30px;
 }
@@ -406,6 +431,7 @@ tbody tr:hover {
   color: rgba(255, 255, 255, 0.85);
   font-weight: 600;
   font-size: 14px;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 .form-group input {
@@ -415,6 +441,7 @@ tbody tr:hover {
   font-size: 14px;
   background: rgba(255, 255, 255, 0.15);
   color: white;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 .form-group input::placeholder {
@@ -437,6 +464,7 @@ tbody tr:hover {
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
+  font-family: 'Mundial Black', sans-serif;
 }
 
 .login-button:hover {
@@ -449,6 +477,7 @@ tbody tr:hover {
   padding: 10px;
   border-radius: 6px;
   font-size: 14px;
+  font-family: 'Basic Sans', sans-serif;
 }
 
 .arrow-btn {
@@ -468,6 +497,30 @@ tbody tr:hover {
 .arrow-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.leads-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.leads-search {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 300px;
+  outline: none;
+  font-family: 'Basic Sans', sans-serif;
+}
+
+.leads-search:focus {
+  border-color: #FF3366;
+  box-shadow: 0 0 0 3px rgba(255, 51, 102, 0.1);
 }
 
 /* Mobile Responsive Styles */
@@ -597,6 +650,10 @@ tbody tr:hover {
 
   .login-title {
     font-size: 20px;
+  }
+
+  .leads-search {
+    width: 100%;
   }
 }
 
