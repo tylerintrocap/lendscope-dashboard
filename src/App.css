@@ -1,13 +1,13 @@
 @font-face {
   font-family: 'Mundial Black';
-  src: url('/fonts/Mundial_Bold.woff2') format('woff2');
+  src: url('./fonts/Mundial_Bold.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
   font-family: 'Basic Sans';
-  src: url('/fonts/BasicSans.woff2') format('woff2');
+  src: url('./fonts/BasicSans.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
 }
