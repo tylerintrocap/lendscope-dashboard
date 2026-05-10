@@ -268,6 +268,8 @@ const App = () => {
 
     const answeredPhoneLeads = allLeads.filter(l => l.fields['Phone Answered']).length;
     const appointmentBookedLeads = allLeads.filter(l => l.fields['Appointment Booked']).length;
+    // Fixed: MQL = Phone Answered AND has a Lead Rank
+    const answeredMQLLeads = allLeads.filter(l => l.fields['Phone Answered'] && l.fields['Lead Rank']).length;
     const dipAgreedCount = allLeads.filter(l => l.fields['DIP Agreed']).length;
     const pickupRate = phoneVerifiedLeads > 0 ? (answeredPhoneLeads / phoneVerifiedLeads) * 100 : 0;
     const appointmentBookingRate = answeredPhoneLeads > 0 ? (appointmentBookedLeads / answeredPhoneLeads) * 100 : 0;
@@ -278,7 +280,7 @@ const App = () => {
       costPerRawLead: totalRawLeads > 0 ? totalCost / totalRawLeads : 0,
       costPerPhoneVerified: phoneVerifiedLeads > 0 ? totalCost / phoneVerifiedLeads : 0,
       costPerAnswered: answeredPhoneLeads > 0 ? totalCost / answeredPhoneLeads : 0,
-      costPerMQL: appointmentBookedLeads > 0 ? totalCost / appointmentBookedLeads : 0,
+      costPerMQL: answeredMQLLeads > 0 ? totalCost / answeredMQLLeads : 0,
       totalRawLeads, phoneVerifiedLeads, answeredPhoneLeads, appointmentBookedLeads,
       pickupRate, appointmentBookingRate, dipAgreedRate,
       mortgagePickupRate, mortgageBookingRate, mortgageDIPRate,
@@ -291,14 +293,12 @@ const App = () => {
     { name: 'Remortgage', value: remortgageLeads.length }
   ];
 
-  // Change 2: charcoal for Yes, white for No
   const getDirectorOwner = () => {
     const yesCount = [...mortgageLeads, ...remortgageLeads].filter(l => l.fields['Director/Owner'] === 'Yes').length;
     const noCount = [...mortgageLeads, ...remortgageLeads].filter(l => l.fields['Director/Owner'] === 'No').length;
     return [{ name: 'Yes', value: yesCount }, { name: 'No', value: noCount }];
   };
 
-  // Change 4: renamed, charcoal for Yes, white for No
   const getHasOtherProperties = () => {
     const hasBTL = [...mortgageLeads, ...remortgageLeads].filter(l => {
       const btlCount = l.fields['Current BTLs'];
@@ -311,14 +311,12 @@ const App = () => {
     return [{ name: 'Yes', value: hasBTL }, { name: 'No', value: noBTL }];
   };
 
-  // Change 5: fixed so >= 25 is "25%+ Deposit" and < 25 is "Under 25%"
   const get25PercentDeposit = () => {
     const has25 = mortgageLeads.filter(l => parseFloat(l.fields['Deposit %']) >= 25).length;
     const no25 = mortgageLeads.filter(l => parseFloat(l.fields['Deposit %']) < 25).length;
     return [{ name: '25%+ Deposit', value: has25 }, { name: 'Under 25%', value: no25 }];
   };
 
-  // Change 6: new remortgage LTV pie chart, <=75% is good
   const getRemortgageLTV = () => {
     const within = remortgageLeads.filter(l => parseFloat(l.fields['LTV']) <= 75).length;
     const above = remortgageLeads.filter(l => parseFloat(l.fields['LTV']) > 75).length;
@@ -355,7 +353,6 @@ const App = () => {
     return Object.keys(ranges).map(key => ({ range: key, count: ranges[key] }));
   };
 
-  // Change 7: reversed order for mortgage stages
   const getMortgageStageData = () => {
     const stages = ['Looking for a Property', 'Found a Property', 'Made an offer', 'Paid a deposit'];
     return stages.map(stage => ({
@@ -365,7 +362,6 @@ const App = () => {
     }));
   };
 
-  // Change 7: reversed order for remortgage stages
   const getRemortgageStageData = () => {
     const stages = ['Rate Shopping', 'Within the next 6 months', 'Within the next 3 months', 'ASAP'];
     return stages.map(stage => ({
@@ -400,11 +396,9 @@ const App = () => {
 
   const metrics = isAuthenticated ? calculateMetrics() : null;
   const pieColors = ['#FF3366', '#2BB4A0'];
-  // Change 3 & 4: charcoal/white for binary yes/no charts
   const binaryPieColors = ['#3c3c3c', '#ffffff'];
-  // Change 5 & 6: green/red for good/bad threshold charts
   const thresholdPieColors = ['#2BB4A0', '#FF3366'];
-  const chartColors = { primary: '#FF3366', secondary: '#3c3c3c' }; // Change 7: secondary now charcoal
+  const chartColors = { primary: '#FF3366', secondary: '#3c3c3c' };
 
   const hexToRgba = (hex, alpha) => {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -455,7 +449,6 @@ const App = () => {
     </td>
   );
 
-  // Change 2: removed "Sales Performance —" prefix from headings
   const renderSalesPerformance = () => (
     <>
       <h2>BTL Mortgage</h2>
@@ -659,7 +652,6 @@ const App = () => {
       </div>
       {datePickerModal}
 
-      {/* Change 1: Lead Cost Analysis now charcoal */}
       <h2>Lead Cost Analysis</h2>
       <div className="metrics-grid">
         <div className="metric-card" style={{ backgroundColor: '#3c3c3c', borderColor: '#3c3c3c' }}>
@@ -695,7 +687,6 @@ const App = () => {
             </PieChart>
           </ResponsiveContainer>
         </div>
-        {/* Change 3: charcoal/white colours */}
         <div className="chart-card">
           <h3>Director/Owner</h3>
           <ResponsiveContainer width="100%" height={280}>
@@ -707,7 +698,6 @@ const App = () => {
             </PieChart>
           </ResponsiveContainer>
         </div>
-        {/* Change 4: renamed + charcoal/white colours */}
         <div className="chart-card">
           <h3>Has Other Properties</h3>
           <ResponsiveContainer width="100%" height={280}>
@@ -722,7 +712,6 @@ const App = () => {
       </div>
 
       <div className="charts-grid">
-        {/* Change 5: fixed deposit pie */}
         <div className="chart-card">
           <h3>Deposit Status (Mortgage)</h3>
           <ResponsiveContainer width="100%" height={280}>
@@ -734,7 +723,6 @@ const App = () => {
             </PieChart>
           </ResponsiveContainer>
         </div>
-        {/* Change 6: new LTV pie for remortgage */}
         <div className="chart-card">
           <h3>LTV Status (Remortgage)</h3>
           <ResponsiveContainer width="100%" height={280}>
@@ -748,7 +736,6 @@ const App = () => {
         </div>
       </div>
 
-      {/* Change 7: reversed order, charcoal for answered bar */}
       <div className="charts-grid">
         <div className="chart-card">
           <h3>Mortgage Stages</h3>
@@ -807,7 +794,6 @@ const App = () => {
         </div>
       </div>
 
-      {/* Change 9: Lead Rank column added */}
       <div className="leads-table-card">
         <div className="leads-table-header">
           <h3>All Leads for Selected Period ({filteredAdminLeads.length}{searchQuery ? ` of ${displayLeads.length}` : ''})</h3>
