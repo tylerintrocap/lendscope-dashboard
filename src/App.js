@@ -222,8 +222,6 @@ const App = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customDates, dateRange, isAuthenticated]);
 
-  // Phone Answered is one-way only (can't uncheck)
-  // Appointment Booked and DIP Agreed are toggleable
   const handleLeadAction = async (leadId, leadType, field, currentValue) => {
     try {
       const tableName = leadType === 'Mortgage' ? 'BTL Mortgage Lead Data' : 'BTL Remortgage Lead Data';
@@ -350,12 +348,24 @@ const App = () => {
   const getFilteredLeads = (leads) => {
     if (!searchQuery.trim()) return leads;
     const q = searchQuery.toLowerCase().trim();
+
+    // Build alternate phone format so 07... matches +447... and vice versa
+    let altQ = null;
+    if (q.startsWith('0')) {
+      altQ = '+44' + q.slice(1);
+    } else if (q.startsWith('+44')) {
+      altQ = '0' + q.slice(3);
+    } else if (q.startsWith('44')) {
+      altQ = '0' + q.slice(2);
+    }
+
     return leads.filter(lead => {
       const firstName = (lead.fields.First_Name || '').toLowerCase();
       const lastName = (lead.fields.Last_Name || '').toLowerCase();
       const fullName = `${firstName} ${lastName}`;
       const phone = (lead.fields.Phone || '').toLowerCase();
-      return fullName.includes(q) || firstName.includes(q) || lastName.includes(q) || phone.includes(q);
+      return fullName.includes(q) || firstName.includes(q) || lastName.includes(q) ||
+        phone.includes(q) || (altQ && phone.includes(altQ));
     });
   };
 
@@ -387,10 +397,8 @@ const App = () => {
     );
   };
 
-  // Reusable lead action buttons
   const renderLeadActions = (lead) => (
     <td>
-      {/* Phone Answered - one way only */}
       <button
         disabled={lead.fields['Phone Answered']}
         onClick={() => handleLeadAction(lead.id, lead.type, 'Phone Answered', lead.fields['Phone Answered'])}
@@ -398,14 +406,12 @@ const App = () => {
       >
         {lead.fields['Phone Answered'] ? 'Answered ✓' : 'Answered Phone'}
       </button>
-      {/* Appointment Booked - toggleable */}
       <button
         onClick={() => handleLeadAction(lead.id, lead.type, 'Appointment Booked', lead.fields['Appointment Booked'])}
         className={`action-btn${lead.fields['Appointment Booked'] ? ' active' : ''}`}
       >
         {lead.fields['Appointment Booked'] ? 'Booked ✓' : 'Appointment Booked'}
       </button>
-      {/* DIP Agreed - toggleable */}
       <button
         onClick={() => handleLeadAction(lead.id, lead.type, 'DIP Agreed', lead.fields['DIP Agreed'])}
         className={`action-btn success${lead.fields['DIP Agreed'] ? ' active' : ''}`}
