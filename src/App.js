@@ -357,7 +357,7 @@ const App = () => {
 
   // Change 7: reversed order for mortgage stages
   const getMortgageStageData = () => {
-    const stages = ['Paid a deposit', 'Made an offer', 'Found a Property', 'Looking for a Property'];
+    const stages = ['Looking for a Property', 'Found a Property', 'Made an offer', 'Paid a deposit'];
     return stages.map(stage => ({
       stage: stage.replace('Looking for a Property', 'Looking').replace('Found a Property', 'Found').replace('Made an offer', 'Offer').replace('Paid a deposit', 'Paid Deposit'),
       total: mortgageLeads.filter(l => l.fields.Stage === stage).length,
