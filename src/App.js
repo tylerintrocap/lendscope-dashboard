@@ -283,11 +283,8 @@ const App = () => {
       costPerAnswered: answeredPhoneLeads > 0 ? totalCost / answeredPhoneLeads : 0,
       costPerMQL: appointmentBookedLeads > 0 ? totalCost / appointmentBookedLeads : 0,
       totalRawLeads, phoneVerifiedLeads, answeredPhoneLeads, appointmentBookedLeads,
-      // Overall
       pickupRate, appointmentBookingRate, dipAgreedRate,
-      // Mortgage
       mortgagePickupRate, mortgageBookingRate, mortgageDIPRate,
-      // Remortgage
       remortgagePickupRate, remortgageBookingRate, remortgageDIPRate,
     };
   };
@@ -420,6 +417,7 @@ const App = () => {
     );
   };
 
+  // ── The only thing changed: button class names ──
   const renderLeadActions = (lead) => (
     <td>
       <button
@@ -431,20 +429,19 @@ const App = () => {
       </button>
       <button
         onClick={() => handleLeadAction(lead.id, lead.type, 'Appointment Booked', lead.fields['Appointment Booked'])}
-        className={`action-btn${lead.fields['Appointment Booked'] ? ' active' : ''}`}
+        className={`action-btn booked${lead.fields['Appointment Booked'] ? ' active' : ''}`}
       >
         {lead.fields['Appointment Booked'] ? 'Booked ✓' : 'Appointment Booked'}
       </button>
       <button
         onClick={() => handleLeadAction(lead.id, lead.type, 'DIP Agreed', lead.fields['DIP Agreed'])}
-        className={`action-btn success${lead.fields['DIP Agreed'] ? ' active' : ''}`}
+        className={`action-btn dip${lead.fields['DIP Agreed'] ? ' active' : ''}`}
       >
         {lead.fields['DIP Agreed'] ? 'Agreed ✓' : 'DIP Agreed'}
       </button>
     </td>
   );
 
-  // Reusable Sales Performance section
   const renderSalesPerformance = () => (
     <>
       <h2>Sales Performance — BTL Mortgage</h2>
