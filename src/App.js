@@ -35,104 +35,110 @@ const App = () => {
     setLoginError('');
   };
 
-  const shiftDateRange = (direction) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  // Get date string in UK timezone (Europe/London) as YYYY-MM-DD
+  const getUKDateString = (date) => {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(date);
+    const d = {};
+    parts.forEach(p => { d[p.type] = p.value; });
+    return `${d.year}-${d.month}-${d.day}`;
+  };
 
+  const getUKToday = () => getUKDateString(new Date());
+
+  const getUKYesterday = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return getUKDateString(d);
+  };
+
+  const shiftDateRange = (direction) => {
     if (dateRange === 'today') {
       if (direction === -1) {
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        setCustomDates({ start: yesterday.toISOString().split('T')[0], end: yesterday.toISOString().split('T')[0] });
+        const y = getUKYesterday();
+        setCustomDates({ start: y, end: y });
         setDateRange('custom');
       }
     } else if (dateRange === 'yesterday') {
       if (direction === -1) {
-        const twoDaysAgo = new Date(today);
-        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-        setCustomDates({ start: twoDaysAgo.toISOString().split('T')[0], end: twoDaysAgo.toISOString().split('T')[0] });
+        const d = new Date();
+        d.setDate(d.getDate() - 2);
+        const s = getUKDateString(d);
+        setCustomDates({ start: s, end: s });
         setDateRange('custom');
       } else {
         setDateRange('today');
       }
     } else if (dateRange === '7d') {
-      const newEnd = new Date(today);
-      newEnd.setDate(newEnd.getDate() + (direction * 7));
-      const newStart = new Date(newEnd);
-      newStart.setDate(newStart.getDate() - 7);
-      setCustomDates({ start: newStart.toISOString().split('T')[0], end: newEnd.toISOString().split('T')[0] });
+      const end = new Date();
+      end.setDate(end.getDate() + (direction * 7));
+      const start = new Date(end);
+      start.setDate(start.getDate() - 7);
+      setCustomDates({ start: getUKDateString(start), end: getUKDateString(end) });
       setDateRange('custom');
     } else if (dateRange === '30d') {
-      const newEnd = new Date(today);
-      newEnd.setDate(newEnd.getDate() + (direction * 30));
-      const newStart = new Date(newEnd);
-      newStart.setDate(newStart.getDate() - 30);
-      setCustomDates({ start: newStart.toISOString().split('T')[0], end: newEnd.toISOString().split('T')[0] });
+      const end = new Date();
+      end.setDate(end.getDate() + (direction * 30));
+      const start = new Date(end);
+      start.setDate(start.getDate() - 30);
+      setCustomDates({ start: getUKDateString(start), end: getUKDateString(end) });
       setDateRange('custom');
     } else if (dateRange === '90d') {
-      const newEnd = new Date(today);
-      newEnd.setDate(newEnd.getDate() + (direction * 90));
-      const newStart = new Date(newEnd);
-      newStart.setDate(newStart.getDate() - 90);
-      setCustomDates({ start: newStart.toISOString().split('T')[0], end: newEnd.toISOString().split('T')[0] });
+      const end = new Date();
+      end.setDate(end.getDate() + (direction * 90));
+      const start = new Date(end);
+      start.setDate(start.getDate() - 90);
+      setCustomDates({ start: getUKDateString(start), end: getUKDateString(end) });
       setDateRange('custom');
     } else if (dateRange === 'custom') {
       const start = new Date(customDates.start);
       const end = new Date(customDates.end);
       const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-      const newStart = new Date(start);
-      newStart.setDate(newStart.getDate() + (direction * daysDiff));
-      const newEnd = new Date(end);
-      newEnd.setDate(newEnd.getDate() + (direction * daysDiff));
-      setCustomDates({ start: newStart.toISOString().split('T')[0], end: newEnd.toISOString().split('T')[0] });
+      start.setDate(start.getDate() + (direction * daysDiff));
+      end.setDate(end.getDate() + (direction * daysDiff));
+      setCustomDates({ start: getUKDateString(start), end: getUKDateString(end) });
     }
   };
 
   const getDateRangeParams = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    let startDate, endDate = new Date(today);
-    endDate.setHours(23, 59, 59, 999);
+    const todayStr = getUKToday();
+    const yesterdayStr = getUKYesterday();
 
     switch(dateRange) {
       case 'today':
-        startDate = new Date(today);
-        break;
+        return { startDate: todayStr, endDate: todayStr };
       case 'yesterday':
-        startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - 1);
-        endDate = new Date(startDate);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case '7d':
-        startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - 7);
-        break;
-      case '30d':
-        startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - 30);
-        break;
-      case '90d':
-        startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - 90);
-        break;
+        return { startDate: yesterdayStr, endDate: yesterdayStr };
+      case '7d': {
+        const d = new Date();
+        d.setDate(d.getDate() - 7);
+        return { startDate: getUKDateString(d), endDate: todayStr };
+      }
+      case '30d': {
+        const d = new Date();
+        d.setDate(d.getDate() - 30);
+        return { startDate: getUKDateString(d), endDate: todayStr };
+      }
+      case '90d': {
+        const d = new Date();
+        d.setDate(d.getDate() - 90);
+        return { startDate: getUKDateString(d), endDate: todayStr };
+      }
       case 'alltime':
         return null;
       case 'custom':
         if (!customDates.start || !customDates.end) return null;
-        startDate = new Date(customDates.start);
-        endDate = new Date(customDates.end);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      default:
-        startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - 30);
+        return { startDate: customDates.start, endDate: customDates.end };
+      default: {
+        const d = new Date();
+        d.setDate(d.getDate() - 30);
+        return { startDate: getUKDateString(d), endDate: todayStr };
+      }
     }
-
-    return {
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0]
-    };
   };
 
   const callAPI = async (tableName, method = 'GET', recordId = null, fields = null) => {
@@ -246,13 +252,10 @@ const App = () => {
     }
   };
 
-  // Airtable percentage fields come back as decimals e.g. 0.25 = 25%
-  // This normalises to a 0-100 scale regardless of how it's stored
   const normalisePercent = (val) => {
     if (val === null || val === undefined || val === '') return 0;
     const num = parseFloat(String(val).replace('%', ''));
     if (isNaN(num)) return 0;
-    // If stored as decimal (e.g. 0.25), convert to percentage
     return num <= 1 ? num * 100 : num;
   };
 
