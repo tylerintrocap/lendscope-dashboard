@@ -24,7 +24,6 @@ exports.handler = async (event, context) => {
     const credentials = Buffer.from(authHeader.split(' ')[1], 'base64').toString();
     const [username, password] = credentials.split(':');
 
-    // Define valid users - admin and sales
     const validUsers = [
       {
         username: process.env.ADMIN_USERNAME,
@@ -38,7 +37,6 @@ exports.handler = async (event, context) => {
       }
     ];
 
-    // Check if credentials match any valid user
     const authenticatedUser = validUsers.find(user =>
       username === user.username && password === user.password
     );
@@ -69,17 +67,15 @@ exports.handler = async (event, context) => {
       let filteredRecords = records;
 
       if (startDate && endDate) {
-        const start = new Date(startDate);
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-
         filteredRecords = records.filter(record => {
           const dateField = record.fields.Date;
           if (!dateField) return false;
 
-          const recordDate = new Date(dateField);
-          return recordDate >= start && recordDate <= end;
+          // Compare date strings directly (YYYY-MM-DD) to avoid timezone issues
+          // Airtable stores dates as "2026-05-10" or "2026-05-10T20:43:00.000Z"
+          // Extract just the YYYY-MM-DD part for comparison
+          const recordDateStr = dateField.substring(0, 10);
+          return recordDateStr >= startDate && recordDateStr <= endDate;
         });
       }
 
