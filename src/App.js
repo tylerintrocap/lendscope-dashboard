@@ -35,7 +35,6 @@ const App = () => {
     setLoginError('');
   };
 
-  // Get date string in UK timezone (Europe/London) as YYYY-MM-DD
   const getUKDateString = (date) => {
     const parts = new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Europe/London',
@@ -375,11 +374,23 @@ const App = () => {
   };
 
   const getRemortgageStageData = () => {
-    const stages = ['Rate Shopping', 'Within the next 6 months', 'Within the next 3 months', 'ASAP'];
-    return stages.map(stage => ({
-      stage: stage.replace('Within the next 3 months', '3 months').replace('Within the next 6 months', '6 months').replace('Rate Shopping', 'Rate Shop'),
-      total: remortgageLeads.filter(l => l.fields.Stage === stage).length,
-      answered: remortgageLeads.filter(l => l.fields.Stage === stage && l.fields['Phone Answered']).length
+    // Match both "Within next X months" and "Within the next X months"
+    const matchStage = (leadStage, variants) => {
+      if (!leadStage) return false;
+      return variants.some(v => leadStage.trim() === v.trim());
+    };
+
+    const displayOrder = [
+      { key: 'Rate Shopping', variants: ['Rate Shopping', 'Rate shopping'], label: 'Rate Shop' },
+      { key: 'Within next 6 months', variants: ['Within next 6 months', 'Within the next 6 months', 'Within 6 months'], label: '6 months' },
+      { key: 'Within next 3 months', variants: ['Within next 3 months', 'Within the next 3 months', 'Within 3 months'], label: '3 months' },
+      { key: 'ASAP', variants: ['ASAP', 'asap'], label: 'ASAP' },
+    ];
+
+    return displayOrder.map(({ variants, label }) => ({
+      stage: label,
+      total: remortgageLeads.filter(l => matchStage(l.fields.Stage, variants)).length,
+      answered: remortgageLeads.filter(l => matchStage(l.fields.Stage, variants) && l.fields['Phone Answered']).length
     }));
   };
 
@@ -411,6 +422,7 @@ const App = () => {
   const binaryPieColors = ['#3c3c3c', '#ffffff'];
   const thresholdPieColors = ['#2BB4A0', '#FF3366'];
   const chartColors = { primary: '#FF3366', secondary: '#3c3c3c' };
+  const remortgageChartColors = { primary: '#2BB4A0', secondary: '#3c3c3c' };
 
   const hexToRgba = (hex, alpha) => {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -772,8 +784,8 @@ const App = () => {
               <YAxis allowDecimals={false} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="total" fill={chartColors.primary} name="Total" />
-              <Bar dataKey="answered" fill={chartColors.secondary} name="Answered" />
+              <Bar dataKey="total" fill={remortgageChartColors.primary} name="Total" />
+              <Bar dataKey="answered" fill={remortgageChartColors.secondary} name="Answered" />
             </BarChart>
           </ResponsiveContainer>
         </div>
