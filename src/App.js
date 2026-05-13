@@ -131,7 +131,6 @@ const App = () => {
     }
 
     const body = method === 'GET' ? null : JSON.stringify({ tableName, recordId, fields });
-
     const response = await fetch(`/api/airtable${queryParams}`, {
       method: method === 'GET' ? 'GET' : 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${creds}` },
@@ -362,7 +361,6 @@ const App = () => {
     if (q.startsWith('0')) altQ = '+44' + q.slice(1);
     else if (q.startsWith('+44')) altQ = '0' + q.slice(3);
     else if (q.startsWith('44')) altQ = '0' + q.slice(2);
-
     return leads.filter(lead => {
       const firstName = (lead.fields.First_Name || '').toLowerCase();
       const lastName = (lead.fields.Last_Name || '').toLowerCase();
@@ -373,11 +371,11 @@ const App = () => {
     });
   };
 
-  // Check if all 3 dropdowns are filled for a lead
+  // Only check the new Sales fields — NOT the original form fields
   const isReadyForActions = (lead) => {
-    const stage = lead.fields['Stage (Sales)'] || lead.fields.Stage;
-    const director = lead.fields['Director (Sales)'] || lead.fields['Director/Owner'];
-    const btls = lead.fields['Current BTLs (Sales)'] !== undefined ? lead.fields['Current BTLs (Sales)'] : lead.fields['Current BTLs'];
+    const stage = lead.fields['Stage (Sales)'];
+    const director = lead.fields['Director (Sales)'];
+    const btls = lead.fields['Current BTLs (Sales)'];
     return !!(stage && director && (btls !== undefined && btls !== null && btls !== ''));
   };
 
@@ -445,15 +443,16 @@ const App = () => {
     </td>
   );
 
-  // Sales lead row with dropdowns + gated actions
   const renderSalesLeadRow = (lead) => {
     const ready = isReadyForActions(lead);
     const stageOptions = lead.type === 'Mortgage' ? getMortgageStageOptions() : getRemortgageStageOptions();
-    const currentStage = lead.fields['Stage (Sales)'] || lead.fields.Stage || '';
-    const currentDirector = lead.fields['Director (Sales)'] || lead.fields['Director/Owner'] || '';
-    const currentBTLs = lead.fields['Current BTLs (Sales)'] !== undefined
+
+    // Only read from the NEW Sales fields — default to empty string if not set
+    const currentStage = lead.fields['Stage (Sales)'] || '';
+    const currentDirector = lead.fields['Director (Sales)'] || '';
+    const currentBTLs = lead.fields['Current BTLs (Sales)'] !== undefined && lead.fields['Current BTLs (Sales)'] !== null
       ? String(lead.fields['Current BTLs (Sales)'])
-      : (lead.fields['Current BTLs'] !== undefined ? String(lead.fields['Current BTLs']) : '');
+      : '';
 
     return (
       <tr key={lead.id}>
@@ -498,10 +497,9 @@ const App = () => {
           </select>
         </td>
         <td>
-          {!ready && (
+          {!ready ? (
             <span style={{ fontSize: '11px', color: '#999', fontStyle: 'italic' }}>Fill in Stage, Director & BTLs first</span>
-          )}
-          {ready && (
+          ) : (
             <>
               <button
                 disabled={lead.fields['Phone Answered']}
