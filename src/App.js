@@ -21,6 +21,7 @@ const App = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [authCredentials, setAuthCredentials] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [chartDataSource, setChartDataSource] = useState('form'); // 'form' or 'sales'
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -56,55 +57,29 @@ const App = () => {
 
   const shiftDateRange = (direction) => {
     if (dateRange === 'today') {
-      if (direction === -1) {
-        const y = getUKYesterday();
-        setCustomDates({ start: y, end: y });
-        setDateRange('custom');
-      }
+      if (direction === -1) { const y = getUKYesterday(); setCustomDates({ start: y, end: y }); setDateRange('custom'); }
     } else if (dateRange === 'yesterday') {
-      if (direction === -1) {
-        const d = new Date();
-        d.setDate(d.getDate() - 2);
-        const s = getUKDateString(d);
-        setCustomDates({ start: s, end: s });
-        setDateRange('custom');
-      } else {
-        setDateRange('today');
-      }
+      if (direction === -1) { const d = new Date(); d.setDate(d.getDate() - 2); const s = getUKDateString(d); setCustomDates({ start: s, end: s }); setDateRange('custom'); }
+      else { setDateRange('today'); }
     } else if (dateRange === '7d') {
-      const end = new Date();
-      end.setDate(end.getDate() + (direction * 7));
-      const start = new Date(end);
-      start.setDate(start.getDate() - 7);
-      setCustomDates({ start: getUKDateString(start), end: getUKDateString(end) });
-      setDateRange('custom');
+      const end = new Date(); end.setDate(end.getDate() + (direction * 7)); const start = new Date(end); start.setDate(start.getDate() - 7);
+      setCustomDates({ start: getUKDateString(start), end: getUKDateString(end) }); setDateRange('custom');
     } else if (dateRange === '30d') {
-      const end = new Date();
-      end.setDate(end.getDate() + (direction * 30));
-      const start = new Date(end);
-      start.setDate(start.getDate() - 30);
-      setCustomDates({ start: getUKDateString(start), end: getUKDateString(end) });
-      setDateRange('custom');
+      const end = new Date(); end.setDate(end.getDate() + (direction * 30)); const start = new Date(end); start.setDate(start.getDate() - 30);
+      setCustomDates({ start: getUKDateString(start), end: getUKDateString(end) }); setDateRange('custom');
     } else if (dateRange === '90d') {
-      const end = new Date();
-      end.setDate(end.getDate() + (direction * 90));
-      const start = new Date(end);
-      start.setDate(start.getDate() - 90);
-      setCustomDates({ start: getUKDateString(start), end: getUKDateString(end) });
-      setDateRange('custom');
+      const end = new Date(); end.setDate(end.getDate() + (direction * 90)); const start = new Date(end); start.setDate(start.getDate() - 90);
+      setCustomDates({ start: getUKDateString(start), end: getUKDateString(end) }); setDateRange('custom');
     } else if (dateRange === 'custom') {
-      const start = new Date(customDates.start);
-      const end = new Date(customDates.end);
+      const start = new Date(customDates.start); const end = new Date(customDates.end);
       const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-      start.setDate(start.getDate() + (direction * daysDiff));
-      end.setDate(end.getDate() + (direction * daysDiff));
+      start.setDate(start.getDate() + (direction * daysDiff)); end.setDate(end.getDate() + (direction * daysDiff));
       setCustomDates({ start: getUKDateString(start), end: getUKDateString(end) });
     }
   };
 
   const getDateRangeParams = () => {
-    const todayStr = getUKToday();
-    const yesterdayStr = getUKYesterday();
+    const todayStr = getUKToday(); const yesterdayStr = getUKYesterday();
     switch(dateRange) {
       case 'today': return { startDate: todayStr, endDate: todayStr };
       case 'yesterday': return { startDate: yesterdayStr, endDate: yesterdayStr };
@@ -120,23 +95,18 @@ const App = () => {
   const callAPI = async (tableName, method = 'GET', recordId = null, fields = null) => {
     let creds = authCredentials;
     if (!creds) { setIsAuthenticated(false); throw new Error('Authentication required'); }
-
     let queryParams = '';
     if (method === 'GET') {
       queryParams = `?tableName=${encodeURIComponent(tableName)}`;
       const dates = getDateRangeParams();
-      if (dates && tableName !== 'Google Cost Data') {
-        queryParams += `&startDate=${dates.startDate}&endDate=${dates.endDate}`;
-      }
+      if (dates && tableName !== 'Google Cost Data') queryParams += `&startDate=${dates.startDate}&endDate=${dates.endDate}`;
     }
-
     const body = method === 'GET' ? null : JSON.stringify({ tableName, recordId, fields });
     const response = await fetch(`/api/airtable${queryParams}`, {
       method: method === 'GET' ? 'GET' : 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${creds}` },
       body
     });
-
     if (response.status === 401) { setAuthCredentials(null); setIsAuthenticated(false); throw new Error('Invalid credentials'); }
     if (!response.ok) { const error = await response.json(); throw new Error(error.error || 'API request failed'); }
     return await response.json();
@@ -144,74 +114,45 @@ const App = () => {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true); setError(null);
       const [costResp, mortgageResp, remortgageResp, deadMortgageResp, deadRemortgageResp] = await Promise.all([
-        callAPI('Google Cost Data'),
-        callAPI('BTL Mortgage Lead Data'),
-        callAPI('BTL Remortgage Lead Data'),
-        callAPI('Dead BTL Mortgage Leads'),
-        callAPI('Dead BTL Remortgage Leads')
+        callAPI('Google Cost Data'), callAPI('BTL Mortgage Lead Data'), callAPI('BTL Remortgage Lead Data'),
+        callAPI('Dead BTL Mortgage Leads'), callAPI('Dead BTL Remortgage Leads')
       ]);
-
       setGoogleCostData(costResp.records || []);
       setMortgageLeads(mortgageResp.records || []);
       setRemortgageLeads(remortgageResp.records || []);
       setDeadMortgageLeads(deadMortgageResp.records || []);
       setDeadRemortgageLeads(deadRemortgageResp.records || []);
-
       const allLeads = [
         ...(mortgageResp.records || []).map(l => ({ ...l, type: 'Mortgage' })),
         ...(remortgageResp.records || []).map(l => ({ ...l, type: 'Remortgage' }))
       ].sort((a, b) => new Date(b.fields.Date) - new Date(a.fields.Date));
-
       setDisplayLeads(allLeads);
       setLoading(false);
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
+    } catch (err) { setError(err.message); setLoading(false); }
   };
 
-  useEffect(() => {
-    if (isAuthenticated) fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateRange, isAuthenticated]);
-
-  useEffect(() => {
-    if (isAuthenticated && dateRange === 'custom' && customDates.start && customDates.end) fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customDates, dateRange, isAuthenticated]);
+  useEffect(() => { if (isAuthenticated) fetchData(); }, [dateRange, isAuthenticated]); // eslint-disable-line
+  useEffect(() => { if (isAuthenticated && dateRange === 'custom' && customDates.start && customDates.end) fetchData(); }, [customDates, dateRange, isAuthenticated]); // eslint-disable-line
 
   const handleLeadAction = async (leadId, leadType, field, currentValue) => {
     try {
       const tableName = leadType === 'Mortgage' ? 'BTL Mortgage Lead Data' : 'BTL Remortgage Lead Data';
       const newValue = !currentValue;
       await callAPI(tableName, 'PATCH', leadId, { [field]: newValue });
-      const updateLeads = (prev) => prev.map(lead =>
-        lead.id === leadId ? { ...lead, fields: { ...lead.fields, [field]: newValue } } : lead
-      );
-      setDisplayLeads(updateLeads);
-      if (leadType === 'Mortgage') setMortgageLeads(updateLeads);
-      else setRemortgageLeads(updateLeads);
-    } catch (err) {
-      alert(`Error: ${err.message}`);
-    }
+      const update = (prev) => prev.map(l => l.id === leadId ? { ...l, fields: { ...l.fields, [field]: newValue } } : l);
+      setDisplayLeads(update); if (leadType === 'Mortgage') setMortgageLeads(update); else setRemortgageLeads(update);
+    } catch (err) { alert(`Error: ${err.message}`); }
   };
 
   const handleDropdownChange = async (leadId, leadType, field, value) => {
     try {
       const tableName = leadType === 'Mortgage' ? 'BTL Mortgage Lead Data' : 'BTL Remortgage Lead Data';
       await callAPI(tableName, 'PATCH', leadId, { [field]: value });
-      const updateLeads = (prev) => prev.map(lead =>
-        lead.id === leadId ? { ...lead, fields: { ...lead.fields, [field]: value } } : lead
-      );
-      setDisplayLeads(updateLeads);
-      if (leadType === 'Mortgage') setMortgageLeads(updateLeads);
-      else setRemortgageLeads(updateLeads);
-    } catch (err) {
-      alert(`Error updating field: ${err.message}`);
-    }
+      const update = (prev) => prev.map(l => l.id === leadId ? { ...l, fields: { ...l.fields, [field]: value } } : l);
+      setDisplayLeads(update); if (leadType === 'Mortgage') setMortgageLeads(update); else setRemortgageLeads(update);
+    } catch (err) { alert(`Error: ${err.message}`); }
   };
 
   const normalisePercent = (val) => {
@@ -220,6 +161,16 @@ const App = () => {
     if (isNaN(num)) return 0;
     return num <= 1 ? num * 100 : num;
   };
+
+  const isReadyForActions = (lead) => {
+    const stage = lead.fields['Stage (Sales)'];
+    const director = lead.fields['Director (Sales)'];
+    const btls = lead.fields['Current BTLs (Sales)'];
+    return !!(stage && director && (btls !== undefined && btls !== null && btls !== ''));
+  };
+
+  const getMortgageStageOptions = () => ['Looking for a Property', 'Found a Property', 'Made an offer', 'Paid a deposit'];
+  const getRemortgageStageOptions = () => ['ASAP', 'Within next 3 months', 'Within next 6 months', 'Rate Shopping'];
 
   const calculateMetrics = () => {
     const totalCost = googleCostData.reduce((sum, r) => sum + (r.fields.Cost || 0), 0);
@@ -262,11 +213,7 @@ const App = () => {
     };
   };
 
-  const getMortgageVsRemortgage = () => [
-    { name: 'Mortgage', value: mortgageLeads.length },
-    { name: 'Remortgage', value: remortgageLeads.length }
-  ];
-
+  // ── Chart data functions for FORM source ──
   const getDirectorOwner = () => {
     const yesCount = [...mortgageLeads, ...remortgageLeads].filter(l => l.fields['Director/Owner'] === 'Yes').length;
     const noCount = [...mortgageLeads, ...remortgageLeads].filter(l => l.fields['Director/Owner'] === 'No').length;
@@ -275,15 +222,64 @@ const App = () => {
 
   const getHasOtherProperties = () => {
     const hasBTL = [...mortgageLeads, ...remortgageLeads].filter(l => {
-      const btlCount = l.fields['Current BTLs'];
-      return btlCount && (btlCount === '1' || btlCount === '2' || btlCount === '3' || btlCount === '4' || btlCount === '5+' || parseInt(btlCount) > 0);
+      const b = l.fields['Current BTLs'];
+      return b && (b === '1' || b === '2' || b === '3' || b === '4' || b === '5+' || parseInt(b) > 0);
     }).length;
     const noBTL = [...mortgageLeads, ...remortgageLeads].filter(l => {
-      const btlCount = l.fields['Current BTLs'];
-      return !btlCount || btlCount === '0' || parseInt(btlCount) === 0;
+      const b = l.fields['Current BTLs'];
+      return !b || b === '0' || parseInt(b) === 0;
     }).length;
     return [{ name: 'Yes', value: hasBTL }, { name: 'No', value: noBTL }];
   };
+
+  // ── Chart data functions for SALES source ──
+  const getDirectorOwnerSales = () => {
+    const yesCount = [...mortgageLeads, ...remortgageLeads].filter(l => l.fields['Director (Sales)'] === 'Yes').length;
+    const noCount = [...mortgageLeads, ...remortgageLeads].filter(l => l.fields['Director (Sales)'] === 'No').length;
+    return [{ name: 'Yes', value: yesCount }, { name: 'No', value: noCount }];
+  };
+
+  const getHasOtherPropertiesSales = () => {
+    const hasBTL = [...mortgageLeads, ...remortgageLeads].filter(l => {
+      const b = l.fields['Current BTLs (Sales)'];
+      return b && (b === '1' || b === '2' || b === '3' || b === '4' || b === '5+' || parseInt(b) > 0);
+    }).length;
+    const noBTL = [...mortgageLeads, ...remortgageLeads].filter(l => {
+      const b = l.fields['Current BTLs (Sales)'];
+      return !b || b === '0' || parseInt(b) === 0;
+    }).length;
+    return [{ name: 'Yes', value: hasBTL }, { name: 'No', value: noBTL }];
+  };
+
+  const getMortgageStageDataSales = () => {
+    const stages = ['Looking for a Property', 'Found a Property', 'Made an offer', 'Paid a deposit'];
+    return stages.map(stage => ({
+      stage: stage.replace('Looking for a Property', 'Looking').replace('Found a Property', 'Found').replace('Made an offer', 'Offer').replace('Paid a deposit', 'Paid Deposit'),
+      total: mortgageLeads.filter(l => l.fields['Stage (Sales)'] === stage).length,
+      answered: mortgageLeads.filter(l => l.fields['Stage (Sales)'] === stage && l.fields['Phone Answered']).length
+    }));
+  };
+
+  const getRemortgageStageDataSales = () => {
+    const matchStage = (leadStage, variants) => variants.some(v => (leadStage || '').trim() === v.trim());
+    const displayOrder = [
+      { variants: ['Rate Shopping'], label: 'Rate Shop' },
+      { variants: ['Within next 6 months'], label: '6 months' },
+      { variants: ['Within next 3 months'], label: '3 months' },
+      { variants: ['ASAP'], label: 'ASAP' },
+    ];
+    return displayOrder.map(({ variants, label }) => ({
+      stage: label,
+      total: remortgageLeads.filter(l => matchStage(l.fields['Stage (Sales)'], variants)).length,
+      answered: remortgageLeads.filter(l => matchStage(l.fields['Stage (Sales)'], variants) && l.fields['Phone Answered']).length
+    }));
+  };
+
+  // ── Shared chart data (same for both) ──
+  const getMortgageVsRemortgage = () => [
+    { name: 'Mortgage', value: mortgageLeads.length },
+    { name: 'Remortgage', value: remortgageLeads.length }
+  ];
 
   const get25PercentDeposit = () => {
     const has25 = mortgageLeads.filter(l => normalisePercent(l.fields['Deposit %']) >= 25).length;
@@ -337,14 +333,11 @@ const App = () => {
   };
 
   const getRemortgageStageData = () => {
-    const matchStage = (leadStage, variants) => {
-      if (!leadStage) return false;
-      return variants.some(v => leadStage.trim() === v.trim());
-    };
+    const matchStage = (leadStage, variants) => variants.some(v => (leadStage || '').trim() === v.trim());
     const displayOrder = [
       { variants: ['Rate Shopping', 'Rate shopping'], label: 'Rate Shop' },
-      { variants: ['Within next 6 months', 'Within the next 6 months', 'Within 6 months'], label: '6 months' },
-      { variants: ['Within next 3 months', 'Within the next 3 months', 'Within 3 months'], label: '3 months' },
+      { variants: ['Within next 6 months', 'Within the next 6 months'], label: '6 months' },
+      { variants: ['Within next 3 months', 'Within the next 3 months'], label: '3 months' },
       { variants: ['ASAP', 'asap'], label: 'ASAP' },
     ];
     return displayOrder.map(({ variants, label }) => ({
@@ -364,28 +357,11 @@ const App = () => {
     return leads.filter(lead => {
       const firstName = (lead.fields.First_Name || '').toLowerCase();
       const lastName = (lead.fields.Last_Name || '').toLowerCase();
-      const fullName = `${firstName} ${lastName}`;
       const phone = (lead.fields.Phone || '').toLowerCase();
-      return fullName.includes(q) || firstName.includes(q) || lastName.includes(q) ||
-        phone.includes(q) || (altQ && phone.includes(altQ));
+      const fullName = `${firstName} ${lastName}`;
+      return fullName.includes(q) || firstName.includes(q) || lastName.includes(q) || phone.includes(q) || (altQ && phone.includes(altQ));
     });
   };
-
-  // Only check the new Sales fields — NOT the original form fields
-  const isReadyForActions = (lead) => {
-    const stage = lead.fields['Stage (Sales)'];
-    const director = lead.fields['Director (Sales)'];
-    const btls = lead.fields['Current BTLs (Sales)'];
-    return !!(stage && director && (btls !== undefined && btls !== null && btls !== ''));
-  };
-
-  const getMortgageStageOptions = () => [
-    'Looking for a Property', 'Found a Property', 'Made an offer', 'Paid a deposit'
-  ];
-
-  const getRemortgageStageOptions = () => [
-    'ASAP', 'Within next 3 months', 'Within next 6 months', 'Rate Shopping'
-  ];
 
   const metrics = isAuthenticated ? calculateMetrics() : null;
   const pieColors = ['#FF3366', '#2BB4A0'];
@@ -419,40 +395,14 @@ const App = () => {
     );
   };
 
-  const renderLeadActions = (lead) => (
-    <td>
-      <button
-        disabled={lead.fields['Phone Answered']}
-        onClick={() => handleLeadAction(lead.id, lead.type, 'Phone Answered', lead.fields['Phone Answered'])}
-        className="action-btn"
-      >
-        {lead.fields['Phone Answered'] ? 'Answered ✓' : 'Answered Phone'}
-      </button>
-      <button
-        onClick={() => handleLeadAction(lead.id, lead.type, 'Appointment Booked', lead.fields['Appointment Booked'])}
-        className={`action-btn booked${lead.fields['Appointment Booked'] ? ' active' : ''}`}
-      >
-        {lead.fields['Appointment Booked'] ? 'Booked ✓' : 'Appointment Booked'}
-      </button>
-      <button
-        onClick={() => handleLeadAction(lead.id, lead.type, 'DIP Agreed', lead.fields['DIP Agreed'])}
-        className={`action-btn dip${lead.fields['DIP Agreed'] ? ' active' : ''}`}
-      >
-        {lead.fields['DIP Agreed'] ? 'Agreed ✓' : 'DIP Agreed'}
-      </button>
-    </td>
-  );
-
-  const renderSalesLeadRow = (lead) => {
+  // Shared lead row renderer for both admin and sales
+  const renderLeadRow = (lead, isAdmin = false) => {
     const ready = isReadyForActions(lead);
     const stageOptions = lead.type === 'Mortgage' ? getMortgageStageOptions() : getRemortgageStageOptions();
-
-    // Only read from the NEW Sales fields — default to empty string if not set
     const currentStage = lead.fields['Stage (Sales)'] || '';
     const currentDirector = lead.fields['Director (Sales)'] || '';
     const currentBTLs = lead.fields['Current BTLs (Sales)'] !== undefined && lead.fields['Current BTLs (Sales)'] !== null
-      ? String(lead.fields['Current BTLs (Sales)'])
-      : '';
+      ? String(lead.fields['Current BTLs (Sales)']) : '';
 
     return (
       <tr key={lead.id}>
@@ -460,33 +410,25 @@ const App = () => {
         <td>{lead.fields.Date ? new Date(lead.fields.Date).toLocaleDateString('en-GB') : 'N/A'}</td>
         <td><span className={`badge ${lead.type.toLowerCase()}`}>{lead.type}</span></td>
         <td>{lead.fields.Phone || 'N/A'}</td>
+        {isAdmin && <td>{lead.fields['Lead Rank'] || 'N/A'}</td>}
         <td>
-          <select
-            className="lead-dropdown"
-            value={currentStage}
-            onChange={(e) => handleDropdownChange(lead.id, lead.type, 'Stage (Sales)', e.target.value)}
-          >
+          <select className="lead-dropdown" value={currentStage}
+            onChange={(e) => handleDropdownChange(lead.id, lead.type, 'Stage (Sales)', e.target.value)}>
             <option value="">Stage...</option>
             {stageOptions.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </td>
         <td>
-          <select
-            className="lead-dropdown"
-            value={currentDirector}
-            onChange={(e) => handleDropdownChange(lead.id, lead.type, 'Director (Sales)', e.target.value)}
-          >
+          <select className="lead-dropdown" value={currentDirector}
+            onChange={(e) => handleDropdownChange(lead.id, lead.type, 'Director (Sales)', e.target.value)}>
             <option value="">Director?</option>
             <option value="Yes">Yes</option>
             <option value="No">No</option>
           </select>
         </td>
         <td>
-          <select
-            className="lead-dropdown"
-            value={currentBTLs}
-            onChange={(e) => handleDropdownChange(lead.id, lead.type, 'Current BTLs (Sales)', e.target.value)}
-          >
+          <select className="lead-dropdown" value={currentBTLs}
+            onChange={(e) => handleDropdownChange(lead.id, lead.type, 'Current BTLs (Sales)', e.target.value)}>
             <option value="">BTLs...</option>
             <option value="0">0</option>
             <option value="1">1</option>
@@ -498,26 +440,20 @@ const App = () => {
         </td>
         <td>
           {!ready ? (
-            <span style={{ fontSize: '11px', color: '#999', fontStyle: 'italic' }}>Fill in Stage, Director & BTLs first</span>
+            <span style={{ fontSize: '11px', color: '#999', fontStyle: 'italic' }}>Fill Stage, Director & BTLs first</span>
           ) : (
             <>
-              <button
-                disabled={lead.fields['Phone Answered']}
+              <button disabled={lead.fields['Phone Answered']}
                 onClick={() => handleLeadAction(lead.id, lead.type, 'Phone Answered', lead.fields['Phone Answered'])}
-                className="action-btn"
-              >
+                className="action-btn">
                 {lead.fields['Phone Answered'] ? 'Answered ✓' : 'Answered Phone'}
               </button>
-              <button
-                onClick={() => handleLeadAction(lead.id, lead.type, 'Appointment Booked', lead.fields['Appointment Booked'])}
-                className={`action-btn booked${lead.fields['Appointment Booked'] ? ' active' : ''}`}
-              >
+              <button onClick={() => handleLeadAction(lead.id, lead.type, 'Appointment Booked', lead.fields['Appointment Booked'])}
+                className={`action-btn booked${lead.fields['Appointment Booked'] ? ' active' : ''}`}>
                 {lead.fields['Appointment Booked'] ? 'Booked ✓' : 'Appointment Booked'}
               </button>
-              <button
-                onClick={() => handleLeadAction(lead.id, lead.type, 'DIP Agreed', lead.fields['DIP Agreed'])}
-                className={`action-btn dip${lead.fields['DIP Agreed'] ? ' active' : ''}`}
-              >
+              <button onClick={() => handleLeadAction(lead.id, lead.type, 'DIP Agreed', lead.fields['DIP Agreed'])}
+                className={`action-btn dip${lead.fields['DIP Agreed'] ? ' active' : ''}`}>
                 {lead.fields['DIP Agreed'] ? 'Agreed ✓' : 'DIP Agreed'}
               </button>
             </>
@@ -527,55 +463,217 @@ const App = () => {
     );
   };
 
+  // Sales performance — 3 side by side blocks per product type
   const renderSalesPerformance = () => (
     <>
-      <h2>BTL Mortgage</h2>
-      <div className="metrics-grid-3">
-        <div className="metric-card" style={getGradientStyle('#FF3366', 0.9)}>
-          <div className="metric-value">{metrics.mortgagePickupRate.toFixed(1)}%</div>
-          <div className="metric-label">Pick Up Rate</div>
+      <h2>Sales Performance</h2>
+      <div className="sales-performance-grid">
+        {/* BTL Mortgage */}
+        <div className="sales-perf-block" style={{ borderTop: `4px solid #FF3366` }}>
+          <div className="sales-perf-title" style={{ color: '#FF3366' }}>BTL Mortgage</div>
+          <div className="metrics-grid-3">
+            <div className="metric-card" style={getGradientStyle('#FF3366', 0.9)}>
+              <div className="metric-value">{metrics.mortgagePickupRate.toFixed(1)}%</div>
+              <div className="metric-label">Pick Up Rate</div>
+            </div>
+            <div className="metric-card" style={getGradientStyle('#FF3366', 0.9)}>
+              <div className="metric-value">{metrics.mortgageBookingRate.toFixed(1)}%</div>
+              <div className="metric-label">Appt. Booking Rate</div>
+            </div>
+            <div className="metric-card" style={getGradientStyle('#FF3366', 0.9)}>
+              <div className="metric-value">{metrics.mortgageDIPRate.toFixed(1)}%</div>
+              <div className="metric-label">DIP Agreed Rate</div>
+            </div>
+          </div>
         </div>
-        <div className="metric-card" style={getGradientStyle('#FF3366', 0.9)}>
-          <div className="metric-value">{metrics.mortgageBookingRate.toFixed(1)}%</div>
-          <div className="metric-label">Appointment Booking Rate</div>
+        {/* BTL Remortgage */}
+        <div className="sales-perf-block" style={{ borderTop: `4px solid #2BB4A0` }}>
+          <div className="sales-perf-title" style={{ color: '#2BB4A0' }}>BTL Remortgage</div>
+          <div className="metrics-grid-3">
+            <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
+              <div className="metric-value">{metrics.remortgagePickupRate.toFixed(1)}%</div>
+              <div className="metric-label">Pick Up Rate</div>
+            </div>
+            <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
+              <div className="metric-value">{metrics.remortgageBookingRate.toFixed(1)}%</div>
+              <div className="metric-label">Appt. Booking Rate</div>
+            </div>
+            <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
+              <div className="metric-value">{metrics.remortgageDIPRate.toFixed(1)}%</div>
+              <div className="metric-label">DIP Agreed Rate</div>
+            </div>
+          </div>
         </div>
-        <div className="metric-card" style={getGradientStyle('#FF3366', 0.9)}>
-          <div className="metric-value">{metrics.mortgageDIPRate.toFixed(1)}%</div>
-          <div className="metric-label">DIP Agreed Rate</div>
-        </div>
-      </div>
-      <h2>BTL Remortgage</h2>
-      <div className="metrics-grid-3">
-        <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
-          <div className="metric-value">{metrics.remortgagePickupRate.toFixed(1)}%</div>
-          <div className="metric-label">Pick Up Rate</div>
-        </div>
-        <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
-          <div className="metric-value">{metrics.remortgageBookingRate.toFixed(1)}%</div>
-          <div className="metric-label">Appointment Booking Rate</div>
-        </div>
-        <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
-          <div className="metric-value">{metrics.remortgageDIPRate.toFixed(1)}%</div>
-          <div className="metric-label">DIP Agreed Rate</div>
-        </div>
-      </div>
-      <h2>Overall</h2>
-      <div className="metrics-grid-3">
-        <div className="metric-card" style={{ backgroundColor: '#3c3c3c', borderColor: '#3c3c3c' }}>
-          <div className="metric-value">{metrics.pickupRate.toFixed(1)}%</div>
-          <div className="metric-label">Pick Up Rate</div>
-        </div>
-        <div className="metric-card" style={{ backgroundColor: '#3c3c3c', borderColor: '#3c3c3c' }}>
-          <div className="metric-value">{metrics.appointmentBookingRate.toFixed(1)}%</div>
-          <div className="metric-label">Appointment Booking Rate</div>
-        </div>
-        <div className="metric-card" style={{ backgroundColor: '#3c3c3c', borderColor: '#3c3c3c' }}>
-          <div className="metric-value">{metrics.dipAgreedRate.toFixed(1)}%</div>
-          <div className="metric-label">DIP Agreed Rate</div>
+        {/* Overall */}
+        <div className="sales-perf-block" style={{ borderTop: `4px solid #3c3c3c` }}>
+          <div className="sales-perf-title" style={{ color: '#3c3c3c' }}>Overall</div>
+          <div className="metrics-grid-3">
+            <div className="metric-card" style={{ backgroundColor: '#3c3c3c', borderColor: '#3c3c3c' }}>
+              <div className="metric-value">{metrics.pickupRate.toFixed(1)}%</div>
+              <div className="metric-label">Pick Up Rate</div>
+            </div>
+            <div className="metric-card" style={{ backgroundColor: '#3c3c3c', borderColor: '#3c3c3c' }}>
+              <div className="metric-value">{metrics.appointmentBookingRate.toFixed(1)}%</div>
+              <div className="metric-label">Appt. Booking Rate</div>
+            </div>
+            <div className="metric-card" style={{ backgroundColor: '#3c3c3c', borderColor: '#3c3c3c' }}>
+              <div className="metric-value">{metrics.dipAgreedRate.toFixed(1)}%</div>
+              <div className="metric-label">DIP Agreed Rate</div>
+            </div>
+          </div>
         </div>
       </div>
     </>
   );
+
+  // Chart section with toggle
+  const renderCharts = () => {
+    const directorData = chartDataSource === 'form' ? getDirectorOwner() : getDirectorOwnerSales();
+    const btlData = chartDataSource === 'form' ? getHasOtherProperties() : getHasOtherPropertiesSales();
+    const mortgageStageData = chartDataSource === 'form' ? getMortgageStageData() : getMortgageStageDataSales();
+    const remortgageStageData = chartDataSource === 'form' ? getRemortgageStageData() : getRemortgageStageDataSales();
+
+    return (
+      <>
+        <div className="chart-toggle-header">
+          <h2>Lead Breakdown</h2>
+          <div className="chart-toggle">
+            <button
+              className={`toggle-btn${chartDataSource === 'form' ? ' active' : ''}`}
+              onClick={() => setChartDataSource('form')}
+            >
+              Form Data
+            </button>
+            <button
+              className={`toggle-btn${chartDataSource === 'sales' ? ' active' : ''}`}
+              onClick={() => setChartDataSource('sales')}
+            >
+              Sales Data
+            </button>
+          </div>
+        </div>
+
+        <div className="charts-grid-3">
+          <div className="chart-card">
+            <h3>Mortgage vs Remortgage</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={getMortgageVsRemortgage()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>
+                  {getMortgageVsRemortgage().map((entry, index) => (<Cell key={`cell-${index}`} fill={pieColors[index]} />))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="chart-card">
+            <h3>Director/Owner {chartDataSource === 'sales' ? '(Sales)' : ''}</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={directorData} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>
+                  {directorData.map((entry, index) => (<Cell key={`cell-${index}`} fill={binaryPieColors[index]} stroke="#ddd" strokeWidth={index === 1 ? 1 : 0} />))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="chart-card">
+            <h3>Has Other Properties {chartDataSource === 'sales' ? '(Sales)' : ''}</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={btlData} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>
+                  {btlData.map((entry, index) => (<Cell key={`cell-${index}`} fill={binaryPieColors[index]} stroke="#ddd" strokeWidth={index === 1 ? 1 : 0} />))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="charts-grid">
+          <div className="chart-card">
+            <h3>Deposit Status (Mortgage)</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={get25PercentDeposit()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>
+                  {get25PercentDeposit().map((entry, index) => (<Cell key={`cell-${index}`} fill={thresholdPieColors[index]} />))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="chart-card">
+            <h3>LTV Status (Remortgage)</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={getRemortgageLTV()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>
+                  {getRemortgageLTV().map((entry, index) => (<Cell key={`cell-${index}`} fill={thresholdPieColors[index]} />))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="charts-grid">
+          <div className="chart-card">
+            <h3>Mortgage Stages {chartDataSource === 'sales' ? '(Sales)' : ''}</h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={mortgageStageData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="stage" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="total" fill={chartColors.primary} name="Total" />
+                <Bar dataKey="answered" fill={chartColors.secondary} name="Answered" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="chart-card">
+            <h3>Remortgage Stages {chartDataSource === 'sales' ? '(Sales)' : ''}</h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={remortgageStageData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="stage" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="total" fill={remortgageChartColors.primary} name="Total" />
+                <Bar dataKey="answered" fill={remortgageChartColors.secondary} name="Answered" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="charts-grid">
+          <div className="chart-card">
+            <h3>Mortgage Property Value</h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={getMortgagePropertyRanges()}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="range" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="count" fill={chartColors.primary} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="chart-card">
+            <h3>Remortgage Property Value</h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={getRemortgagePropertyRanges()}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="range" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="count" fill={'#2BB4A0'} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </>
+    );
+  };
 
   if (!isAuthenticated) {
     return (
@@ -600,24 +698,8 @@ const App = () => {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="spinner"></div>
-        <p>Loading dashboard...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="error-screen">
-        <h3>Error Loading Data</h3>
-        <p>{error}</p>
-        <button onClick={fetchData}>Retry</button>
-      </div>
-    );
-  }
+  if (loading) return (<div className="loading-screen"><div className="spinner"></div><p>Loading dashboard...</p></div>);
+  if (error) return (<div className="error-screen"><h3>Error Loading Data</h3><p>{error}</p><button onClick={fetchData}>Retry</button></div>);
 
   const datePickerModal = showDatePicker && (
     <div className="date-picker-modal">
@@ -637,9 +719,7 @@ const App = () => {
     <div className="header-controls">
       <button onClick={() => shiftDateRange(-1)} className="arrow-btn" disabled={dateRange === 'alltime'}>←</button>
       {dateRange !== 'custom' ? (
-        <select value={dateRange} onChange={(e) => {
-          if (e.target.value === 'custom') { setShowDatePicker(true); } else { setDateRange(e.target.value); }
-        }}>
+        <select value={dateRange} onChange={(e) => { if (e.target.value === 'custom') { setShowDatePicker(true); } else { setDateRange(e.target.value); } }}>
           <option value="today">Today</option>
           <option value="yesterday">Yesterday</option>
           <option value="7d">Last 7 days</option>
@@ -673,25 +753,14 @@ const App = () => {
         <div className="leads-table-card">
           <div className="leads-table-header">
             <h3>Leads for Selected Period ({filteredLeads.length}{searchQuery ? ` of ${displayLeads.length}` : ''})</h3>
-            <input
-              type="text"
-              className="leads-search"
-              placeholder="Search by name or phone number..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <input type="text" className="leads-search" placeholder="Search by name or phone number..."
+              value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
           <table>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Phone</th>
-                <th>Stage</th>
-                <th>Director?</th>
-                <th>BTLs</th>
-                <th>Actions</th>
+                <th>Name</th><th>Date</th><th>Type</th><th>Phone</th>
+                <th>Stage</th><th>Director?</th><th>BTLs</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -699,9 +768,7 @@ const App = () => {
                 <tr><td colSpan="8" style={{textAlign: 'center', padding: '40px'}}>
                   {searchQuery ? 'No leads match your search' : 'No leads for this period'}
                 </td></tr>
-              ) : (
-                filteredLeads.map(lead => renderSalesLeadRow(lead))
-              )}
+              ) : filteredLeads.map(lead => renderLeadRow(lead, false))}
             </tbody>
           </table>
         </div>
@@ -740,168 +807,27 @@ const App = () => {
       </div>
 
       {renderSalesPerformance()}
-
-      <h2>Lead Breakdown</h2>
-      <div className="charts-grid-3">
-        <div className="chart-card">
-          <h3>Mortgage vs Remortgage</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie data={getMortgageVsRemortgage()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>
-                {getMortgageVsRemortgage().map((entry, index) => (<Cell key={`cell-${index}`} fill={pieColors[index]} />))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="chart-card">
-          <h3>Director/Owner</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie data={getDirectorOwner()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>
-                {getDirectorOwner().map((entry, index) => (<Cell key={`cell-${index}`} fill={binaryPieColors[index]} stroke="#ddd" strokeWidth={index === 1 ? 1 : 0} />))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="chart-card">
-          <h3>Has Other Properties</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie data={getHasOtherProperties()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>
-                {getHasOtherProperties().map((entry, index) => (<Cell key={`cell-${index}`} fill={binaryPieColors[index]} stroke="#ddd" strokeWidth={index === 1 ? 1 : 0} />))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="charts-grid">
-        <div className="chart-card">
-          <h3>Deposit Status (Mortgage)</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie data={get25PercentDeposit()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>
-                {get25PercentDeposit().map((entry, index) => (<Cell key={`cell-${index}`} fill={thresholdPieColors[index]} />))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="chart-card">
-          <h3>LTV Status (Remortgage)</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie data={getRemortgageLTV()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>
-                {getRemortgageLTV().map((entry, index) => (<Cell key={`cell-${index}`} fill={thresholdPieColors[index]} />))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="charts-grid">
-        <div className="chart-card">
-          <h3>Mortgage Stages</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={getMortgageStageData()}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="stage" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="total" fill={chartColors.primary} name="Total" />
-              <Bar dataKey="answered" fill={chartColors.secondary} name="Answered" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="chart-card">
-          <h3>Remortgage Stages</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={getRemortgageStageData()}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="stage" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="total" fill={remortgageChartColors.primary} name="Total" />
-              <Bar dataKey="answered" fill={remortgageChartColors.secondary} name="Answered" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="charts-grid">
-        <div className="chart-card">
-          <h3>Mortgage Property Value</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={getMortgagePropertyRanges()}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="range" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Bar dataKey="count" fill={chartColors.primary} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="chart-card">
-          <h3>Remortgage Property Value</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={getRemortgagePropertyRanges()}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="range" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Bar dataKey="count" fill={'#2BB4A0'} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      {renderCharts()}
 
       <div className="leads-table-card">
         <div className="leads-table-header">
           <h3>All Leads for Selected Period ({filteredAdminLeads.length}{searchQuery ? ` of ${displayLeads.length}` : ''})</h3>
-          <input
-            type="text"
-            className="leads-search"
-            placeholder="Search by name or phone number..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <input type="text" className="leads-search" placeholder="Search by name or phone number..."
+            value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
         </div>
         <table>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Phone</th>
-              <th>Stage</th>
-              <th>Lead Rank</th>
-              <th>Actions</th>
+              <th>Name</th><th>Date</th><th>Type</th><th>Phone</th>
+              <th>Lead Rank</th><th>Stage</th><th>Director?</th><th>BTLs</th><th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredAdminLeads.length === 0 ? (
-              <tr><td colSpan="7" style={{textAlign: 'center', padding: '40px'}}>
+              <tr><td colSpan="9" style={{textAlign: 'center', padding: '40px'}}>
                 {searchQuery ? 'No leads match your search' : 'No leads for this period'}
               </td></tr>
-            ) : (
-              filteredAdminLeads.map(lead => (
-                <tr key={lead.id}>
-                  <td>{lead.fields.First_Name && lead.fields.Last_Name ? `${lead.fields.First_Name} ${lead.fields.Last_Name}`.trim() : lead.fields.First_Name || lead.fields.Last_Name || 'No name'}</td>
-                  <td>{lead.fields.Date ? new Date(lead.fields.Date).toLocaleDateString('en-GB') : 'N/A'}</td>
-                  <td><span className={`badge ${lead.type.toLowerCase()}`}>{lead.type}</span></td>
-                  <td>{lead.fields.Phone || 'N/A'}</td>
-                  <td>{lead.fields.Stage || 'N/A'}</td>
-                  <td>{lead.fields['Lead Rank'] || 'N/A'}</td>
-                  {renderLeadActions(lead)}
-                </tr>
-              ))
-            )}
+            ) : filteredAdminLeads.map(lead => renderLeadRow(lead, true))}
           </tbody>
         </table>
       </div>
