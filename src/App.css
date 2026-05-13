@@ -129,20 +129,20 @@ h2 {
 }
 
 .sales-perf-block .metric-card {
-  padding: 10px 6px;
+  padding: 14px 10px;
   border-radius: 6px;
   border-width: 2px;
   min-width: 0;
 }
 
 .sales-perf-block .metric-value {
-  font-size: 16px;
-  margin-bottom: 2px;
+  font-size: 26px;
+  margin-bottom: 4px;
   white-space: nowrap;
 }
 
 .sales-perf-block .metric-label {
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.2;
   opacity: 0.9;
 }
