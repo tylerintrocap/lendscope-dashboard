@@ -48,7 +48,6 @@ const App = () => {
   };
 
   const getUKToday = () => getUKDateString(new Date());
-
   const getUKYesterday = () => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
@@ -106,46 +105,21 @@ const App = () => {
   const getDateRangeParams = () => {
     const todayStr = getUKToday();
     const yesterdayStr = getUKYesterday();
-
     switch(dateRange) {
-      case 'today':
-        return { startDate: todayStr, endDate: todayStr };
-      case 'yesterday':
-        return { startDate: yesterdayStr, endDate: yesterdayStr };
-      case '7d': {
-        const d = new Date();
-        d.setDate(d.getDate() - 7);
-        return { startDate: getUKDateString(d), endDate: todayStr };
-      }
-      case '30d': {
-        const d = new Date();
-        d.setDate(d.getDate() - 30);
-        return { startDate: getUKDateString(d), endDate: todayStr };
-      }
-      case '90d': {
-        const d = new Date();
-        d.setDate(d.getDate() - 90);
-        return { startDate: getUKDateString(d), endDate: todayStr };
-      }
-      case 'alltime':
-        return null;
-      case 'custom':
-        if (!customDates.start || !customDates.end) return null;
-        return { startDate: customDates.start, endDate: customDates.end };
-      default: {
-        const d = new Date();
-        d.setDate(d.getDate() - 30);
-        return { startDate: getUKDateString(d), endDate: todayStr };
-      }
+      case 'today': return { startDate: todayStr, endDate: todayStr };
+      case 'yesterday': return { startDate: yesterdayStr, endDate: yesterdayStr };
+      case '7d': { const d = new Date(); d.setDate(d.getDate() - 7); return { startDate: getUKDateString(d), endDate: todayStr }; }
+      case '30d': { const d = new Date(); d.setDate(d.getDate() - 30); return { startDate: getUKDateString(d), endDate: todayStr }; }
+      case '90d': { const d = new Date(); d.setDate(d.getDate() - 90); return { startDate: getUKDateString(d), endDate: todayStr }; }
+      case 'alltime': return null;
+      case 'custom': if (!customDates.start || !customDates.end) return null; return { startDate: customDates.start, endDate: customDates.end };
+      default: { const d = new Date(); d.setDate(d.getDate() - 30); return { startDate: getUKDateString(d), endDate: todayStr }; }
     }
   };
 
   const callAPI = async (tableName, method = 'GET', recordId = null, fields = null) => {
     let creds = authCredentials;
-    if (!creds) {
-      setIsAuthenticated(false);
-      throw new Error('Authentication required');
-    }
+    if (!creds) { setIsAuthenticated(false); throw new Error('Authentication required'); }
 
     let queryParams = '';
     if (method === 'GET') {
@@ -160,24 +134,12 @@ const App = () => {
 
     const response = await fetch(`/api/airtable${queryParams}`, {
       method: method === 'GET' ? 'GET' : 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${creds}`
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${creds}` },
       body
     });
 
-    if (response.status === 401) {
-      setAuthCredentials(null);
-      setIsAuthenticated(false);
-      throw new Error('Invalid credentials');
-    }
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'API request failed');
-    }
-
+    if (response.status === 401) { setAuthCredentials(null); setIsAuthenticated(false); throw new Error('Invalid credentials'); }
+    if (!response.ok) { const error = await response.json(); throw new Error(error.error || 'API request failed'); }
     return await response.json();
   };
 
@@ -185,7 +147,6 @@ const App = () => {
     try {
       setLoading(true);
       setError(null);
-
       const [costResp, mortgageResp, remortgageResp, deadMortgageResp, deadRemortgageResp] = await Promise.all([
         callAPI('Google Cost Data'),
         callAPI('BTL Mortgage Lead Data'),
@@ -214,16 +175,12 @@ const App = () => {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchData();
-    }
+    if (isAuthenticated) fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange, isAuthenticated]);
 
   useEffect(() => {
-    if (isAuthenticated && dateRange === 'custom' && customDates.start && customDates.end) {
-      fetchData();
-    }
+    if (isAuthenticated && dateRange === 'custom' && customDates.start && customDates.end) fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customDates, dateRange, isAuthenticated]);
 
@@ -232,22 +189,29 @@ const App = () => {
       const tableName = leadType === 'Mortgage' ? 'BTL Mortgage Lead Data' : 'BTL Remortgage Lead Data';
       const newValue = !currentValue;
       await callAPI(tableName, 'PATCH', leadId, { [field]: newValue });
-
-      setDisplayLeads(prev => prev.map(lead =>
+      const updateLeads = (prev) => prev.map(lead =>
         lead.id === leadId ? { ...lead, fields: { ...lead.fields, [field]: newValue } } : lead
-      ));
-
-      if (leadType === 'Mortgage') {
-        setMortgageLeads(prev => prev.map(lead =>
-          lead.id === leadId ? { ...lead, fields: { ...lead.fields, [field]: newValue } } : lead
-        ));
-      } else {
-        setRemortgageLeads(prev => prev.map(lead =>
-          lead.id === leadId ? { ...lead, fields: { ...lead.fields, [field]: newValue } } : lead
-        ));
-      }
+      );
+      setDisplayLeads(updateLeads);
+      if (leadType === 'Mortgage') setMortgageLeads(updateLeads);
+      else setRemortgageLeads(updateLeads);
     } catch (err) {
       alert(`Error: ${err.message}`);
+    }
+  };
+
+  const handleDropdownChange = async (leadId, leadType, field, value) => {
+    try {
+      const tableName = leadType === 'Mortgage' ? 'BTL Mortgage Lead Data' : 'BTL Remortgage Lead Data';
+      await callAPI(tableName, 'PATCH', leadId, { [field]: value });
+      const updateLeads = (prev) => prev.map(lead =>
+        lead.id === leadId ? { ...lead, fields: { ...lead.fields, [field]: value } } : lead
+      );
+      setDisplayLeads(updateLeads);
+      if (leadType === 'Mortgage') setMortgageLeads(updateLeads);
+      else setRemortgageLeads(updateLeads);
+    } catch (err) {
+      alert(`Error updating field: ${err.message}`);
     }
   };
 
@@ -374,19 +338,16 @@ const App = () => {
   };
 
   const getRemortgageStageData = () => {
-    // Match both "Within next X months" and "Within the next X months"
     const matchStage = (leadStage, variants) => {
       if (!leadStage) return false;
       return variants.some(v => leadStage.trim() === v.trim());
     };
-
     const displayOrder = [
-      { key: 'Rate Shopping', variants: ['Rate Shopping', 'Rate shopping'], label: 'Rate Shop' },
-      { key: 'Within next 6 months', variants: ['Within next 6 months', 'Within the next 6 months', 'Within 6 months'], label: '6 months' },
-      { key: 'Within next 3 months', variants: ['Within next 3 months', 'Within the next 3 months', 'Within 3 months'], label: '3 months' },
-      { key: 'ASAP', variants: ['ASAP', 'asap'], label: 'ASAP' },
+      { variants: ['Rate Shopping', 'Rate shopping'], label: 'Rate Shop' },
+      { variants: ['Within next 6 months', 'Within the next 6 months', 'Within 6 months'], label: '6 months' },
+      { variants: ['Within next 3 months', 'Within the next 3 months', 'Within 3 months'], label: '3 months' },
+      { variants: ['ASAP', 'asap'], label: 'ASAP' },
     ];
-
     return displayOrder.map(({ variants, label }) => ({
       stage: label,
       total: remortgageLeads.filter(l => matchStage(l.fields.Stage, variants)).length,
@@ -397,15 +358,10 @@ const App = () => {
   const getFilteredLeads = (leads) => {
     if (!searchQuery.trim()) return leads;
     const q = searchQuery.toLowerCase().trim();
-
     let altQ = null;
-    if (q.startsWith('0')) {
-      altQ = '+44' + q.slice(1);
-    } else if (q.startsWith('+44')) {
-      altQ = '0' + q.slice(3);
-    } else if (q.startsWith('44')) {
-      altQ = '0' + q.slice(2);
-    }
+    if (q.startsWith('0')) altQ = '+44' + q.slice(1);
+    else if (q.startsWith('+44')) altQ = '0' + q.slice(3);
+    else if (q.startsWith('44')) altQ = '0' + q.slice(2);
 
     return leads.filter(lead => {
       const firstName = (lead.fields.First_Name || '').toLowerCase();
@@ -416,6 +372,22 @@ const App = () => {
         phone.includes(q) || (altQ && phone.includes(altQ));
     });
   };
+
+  // Check if all 3 dropdowns are filled for a lead
+  const isReadyForActions = (lead) => {
+    const stage = lead.fields['Stage (Sales)'] || lead.fields.Stage;
+    const director = lead.fields['Director (Sales)'] || lead.fields['Director/Owner'];
+    const btls = lead.fields['Current BTLs (Sales)'] !== undefined ? lead.fields['Current BTLs (Sales)'] : lead.fields['Current BTLs'];
+    return !!(stage && director && (btls !== undefined && btls !== null && btls !== ''));
+  };
+
+  const getMortgageStageOptions = () => [
+    'Looking for a Property', 'Found a Property', 'Made an offer', 'Paid a deposit'
+  ];
+
+  const getRemortgageStageOptions = () => [
+    'ASAP', 'Within next 3 months', 'Within next 6 months', 'Rate Shopping'
+  ];
 
   const metrics = isAuthenticated ? calculateMetrics() : null;
   const pieColors = ['#FF3366', '#2BB4A0'];
@@ -473,6 +445,90 @@ const App = () => {
     </td>
   );
 
+  // Sales lead row with dropdowns + gated actions
+  const renderSalesLeadRow = (lead) => {
+    const ready = isReadyForActions(lead);
+    const stageOptions = lead.type === 'Mortgage' ? getMortgageStageOptions() : getRemortgageStageOptions();
+    const currentStage = lead.fields['Stage (Sales)'] || lead.fields.Stage || '';
+    const currentDirector = lead.fields['Director (Sales)'] || lead.fields['Director/Owner'] || '';
+    const currentBTLs = lead.fields['Current BTLs (Sales)'] !== undefined
+      ? String(lead.fields['Current BTLs (Sales)'])
+      : (lead.fields['Current BTLs'] !== undefined ? String(lead.fields['Current BTLs']) : '');
+
+    return (
+      <tr key={lead.id}>
+        <td>{lead.fields.First_Name && lead.fields.Last_Name ? `${lead.fields.First_Name} ${lead.fields.Last_Name}`.trim() : lead.fields.First_Name || lead.fields.Last_Name || 'No name'}</td>
+        <td>{lead.fields.Date ? new Date(lead.fields.Date).toLocaleDateString('en-GB') : 'N/A'}</td>
+        <td><span className={`badge ${lead.type.toLowerCase()}`}>{lead.type}</span></td>
+        <td>{lead.fields.Phone || 'N/A'}</td>
+        <td>
+          <select
+            className="lead-dropdown"
+            value={currentStage}
+            onChange={(e) => handleDropdownChange(lead.id, lead.type, 'Stage (Sales)', e.target.value)}
+          >
+            <option value="">Stage...</option>
+            {stageOptions.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </td>
+        <td>
+          <select
+            className="lead-dropdown"
+            value={currentDirector}
+            onChange={(e) => handleDropdownChange(lead.id, lead.type, 'Director (Sales)', e.target.value)}
+          >
+            <option value="">Director?</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </td>
+        <td>
+          <select
+            className="lead-dropdown"
+            value={currentBTLs}
+            onChange={(e) => handleDropdownChange(lead.id, lead.type, 'Current BTLs (Sales)', e.target.value)}
+          >
+            <option value="">BTLs...</option>
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5+">5+</option>
+          </select>
+        </td>
+        <td>
+          {!ready && (
+            <span style={{ fontSize: '11px', color: '#999', fontStyle: 'italic' }}>Fill in Stage, Director & BTLs first</span>
+          )}
+          {ready && (
+            <>
+              <button
+                disabled={lead.fields['Phone Answered']}
+                onClick={() => handleLeadAction(lead.id, lead.type, 'Phone Answered', lead.fields['Phone Answered'])}
+                className="action-btn"
+              >
+                {lead.fields['Phone Answered'] ? 'Answered ✓' : 'Answered Phone'}
+              </button>
+              <button
+                onClick={() => handleLeadAction(lead.id, lead.type, 'Appointment Booked', lead.fields['Appointment Booked'])}
+                className={`action-btn booked${lead.fields['Appointment Booked'] ? ' active' : ''}`}
+              >
+                {lead.fields['Appointment Booked'] ? 'Booked ✓' : 'Appointment Booked'}
+              </button>
+              <button
+                onClick={() => handleLeadAction(lead.id, lead.type, 'DIP Agreed', lead.fields['DIP Agreed'])}
+                className={`action-btn dip${lead.fields['DIP Agreed'] ? ' active' : ''}`}
+              >
+                {lead.fields['DIP Agreed'] ? 'Agreed ✓' : 'DIP Agreed'}
+              </button>
+            </>
+          )}
+        </td>
+      </tr>
+    );
+  };
+
   const renderSalesPerformance = () => (
     <>
       <h2>BTL Mortgage</h2>
@@ -490,7 +546,6 @@ const App = () => {
           <div className="metric-label">DIP Agreed Rate</div>
         </div>
       </div>
-
       <h2>BTL Remortgage</h2>
       <div className="metrics-grid-3">
         <div className="metric-card" style={getGradientStyle('#2BB4A0', 0.9)}>
@@ -506,7 +561,6 @@ const App = () => {
           <div className="metric-label">DIP Agreed Rate</div>
         </div>
       </div>
-
       <h2>Overall</h2>
       <div className="metrics-grid-3">
         <div className="metric-card" style={{ backgroundColor: '#3c3c3c', borderColor: '#3c3c3c' }}>
@@ -617,9 +671,7 @@ const App = () => {
           {headerControls}
         </div>
         {datePickerModal}
-
         {renderSalesPerformance()}
-
         <div className="leads-table-card">
           <div className="leads-table-header">
             <h3>Leads for Selected Period ({filteredLeads.length}{searchQuery ? ` of ${displayLeads.length}` : ''})</h3>
@@ -638,26 +690,19 @@ const App = () => {
                 <th>Date</th>
                 <th>Type</th>
                 <th>Phone</th>
-                <th>Lead Rank</th>
+                <th>Stage</th>
+                <th>Director?</th>
+                <th>BTLs</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredLeads.length === 0 ? (
-                <tr><td colSpan="6" style={{textAlign: 'center', padding: '40px'}}>
+                <tr><td colSpan="8" style={{textAlign: 'center', padding: '40px'}}>
                   {searchQuery ? 'No leads match your search' : 'No leads for this period'}
                 </td></tr>
               ) : (
-                filteredLeads.map(lead => (
-                  <tr key={lead.id}>
-                    <td>{lead.fields.First_Name && lead.fields.Last_Name ? `${lead.fields.First_Name} ${lead.fields.Last_Name}`.trim() : lead.fields.First_Name || lead.fields.Last_Name || 'No name'}</td>
-                    <td>{lead.fields.Date ? new Date(lead.fields.Date).toLocaleDateString('en-GB') : 'N/A'}</td>
-                    <td><span className={`badge ${lead.type.toLowerCase()}`}>{lead.type}</span></td>
-                    <td>{lead.fields.Phone || 'N/A'}</td>
-                    <td>{lead.fields['Lead Rank'] || 'N/A'}</td>
-                    {renderLeadActions(lead)}
-                  </tr>
-                ))
+                filteredLeads.map(lead => renderSalesLeadRow(lead))
               )}
             </tbody>
           </table>
