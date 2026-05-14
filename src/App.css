@@ -522,13 +522,23 @@ tbody tr:hover { background-color: #f9f9f9; }
   .login-container { padding: 25px 15px; }
 }
 
-.action-btn.dead-btn {
+.dead-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: #e53935;
   color: white;
+  transition: opacity 0.2s;
 }
 
-.action-btn.dead-btn.dead-active {
+.dead-btn.dead-active {
   background: #4caf50;
-  color: white;
-  opacity: 1;
 }
+
+.dead-btn:hover { opacity: 0.8; }

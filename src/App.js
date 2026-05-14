@@ -22,7 +22,7 @@ const App = () => {
   const [authCredentials, setAuthCredentials] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [chartDataSource, setChartDataSource] = useState('form');
-  const [leadsFilter, setLeadsFilter] = useState('active'); // 'all' or 'active'
+  const [leadsFilter, setLeadsFilter] = useState('active');
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -165,7 +165,6 @@ const App = () => {
     const totalRawLeads = mortgageLeads.length + remortgageLeads.length + deadMortgageLeads.length + deadRemortgageLeads.length;
     const phoneVerifiedLeads = mortgageLeads.length + remortgageLeads.length;
     const allLeads = [...mortgageLeads, ...remortgageLeads];
-
     const mAns = mortgageLeads.filter(l => l.fields['Phone Answered']).length;
     const mBook = mortgageLeads.filter(l => l.fields['Appointment Booked']).length;
     const mDIP = mortgageLeads.filter(l => l.fields['DIP Agreed']).length;
@@ -176,7 +175,6 @@ const App = () => {
     const booked = allLeads.filter(l => l.fields['Appointment Booked']).length;
     const mql = allLeads.filter(l => l.fields['Phone Answered'] && l.fields['Lead Rank']).length;
     const dip = allLeads.filter(l => l.fields['DIP Agreed']).length;
-
     return {
       totalCost,
       costPerRawLead: totalRawLeads > 0 ? totalCost / totalRawLeads : 0,
@@ -196,87 +194,25 @@ const App = () => {
   };
 
   const getMortgageVsRemortgage = () => [{ name: 'Mortgage', value: mortgageLeads.length }, { name: 'Remortgage', value: remortgageLeads.length }];
-  const getDirectorOwner = () => {
-    const all = [...mortgageLeads, ...remortgageLeads];
-    return [{ name: 'Yes', value: all.filter(l => l.fields['Director/Owner'] === 'Yes').length }, { name: 'No', value: all.filter(l => l.fields['Director/Owner'] === 'No').length }];
-  };
-  const getHasOtherProperties = () => {
-    const all = [...mortgageLeads, ...remortgageLeads];
-    const yes = all.filter(l => { const b = l.fields['Current BTLs']; return b && (b === '1' || b === '2' || b === '3' || b === '4' || b === '5+' || parseInt(b) > 0); }).length;
-    const no = all.filter(l => { const b = l.fields['Current BTLs']; return !b || b === '0' || parseInt(b) === 0; }).length;
-    return [{ name: 'Yes', value: yes }, { name: 'No', value: no }];
-  };
-  const getMortgageStageData = () => ['Looking for a Property', 'Found a Property', 'Made an offer', 'Paid a deposit'].map(stage => ({
-    stage: stage.replace('Looking for a Property', 'Looking').replace('Found a Property', 'Found').replace('Made an offer', 'Offer').replace('Paid a deposit', 'Paid Deposit'),
-    total: mortgageLeads.filter(l => l.fields.Stage === stage).length,
-    answered: mortgageLeads.filter(l => l.fields.Stage === stage && l.fields['Phone Answered']).length
-  }));
+  const getDirectorOwner = () => { const a = [...mortgageLeads, ...remortgageLeads]; return [{ name: 'Yes', value: a.filter(l => l.fields['Director/Owner'] === 'Yes').length }, { name: 'No', value: a.filter(l => l.fields['Director/Owner'] === 'No').length }]; };
+  const getHasOtherProperties = () => { const a = [...mortgageLeads, ...remortgageLeads]; return [{ name: 'Yes', value: a.filter(l => { const b = l.fields['Current BTLs']; return b && (b === '1' || b === '2' || b === '3' || b === '4' || b === '5+' || parseInt(b) > 0); }).length }, { name: 'No', value: a.filter(l => { const b = l.fields['Current BTLs']; return !b || b === '0' || parseInt(b) === 0; }).length }]; };
+  const getMortgageStageData = () => ['Looking for a Property', 'Found a Property', 'Made an offer', 'Paid a deposit'].map(s => ({ stage: s.replace('Looking for a Property', 'Looking').replace('Found a Property', 'Found').replace('Made an offer', 'Offer').replace('Paid a deposit', 'Paid Deposit'), total: mortgageLeads.filter(l => l.fields.Stage === s).length, answered: mortgageLeads.filter(l => l.fields.Stage === s && l.fields['Phone Answered']).length }));
   const getRemortgageStageData = () => {
     const match = (s, vs) => vs.some(v => (s || '').trim() === v.trim());
-    return [
-      { variants: ['Rate Shopping', 'Rate shopping'], label: 'Rate Shop' },
-      { variants: ['Within next 6 months', 'Within the next 6 months'], label: '6 months' },
-      { variants: ['Within next 3 months', 'Within the next 3 months'], label: '3 months' },
-      { variants: ['ASAP', 'asap'], label: 'ASAP' },
-    ].map(({ variants, label }) => ({
-      stage: label,
-      total: remortgageLeads.filter(l => match(l.fields.Stage, variants)).length,
-      answered: remortgageLeads.filter(l => match(l.fields.Stage, variants) && l.fields['Phone Answered']).length
-    }));
+    return [{ variants: ['Rate Shopping', 'Rate shopping'], label: 'Rate Shop' }, { variants: ['Within next 6 months', 'Within the next 6 months'], label: '6 months' }, { variants: ['Within next 3 months', 'Within the next 3 months'], label: '3 months' }, { variants: ['ASAP', 'asap'], label: 'ASAP' }]
+      .map(({ variants, label }) => ({ stage: label, total: remortgageLeads.filter(l => match(l.fields.Stage, variants)).length, answered: remortgageLeads.filter(l => match(l.fields.Stage, variants) && l.fields['Phone Answered']).length }));
   };
-  const getDirectorOwnerSales = () => {
-    const all = [...mortgageLeads, ...remortgageLeads];
-    return [{ name: 'Yes', value: all.filter(l => l.fields['Director (Sales)'] === 'Yes').length }, { name: 'No', value: all.filter(l => l.fields['Director (Sales)'] === 'No').length }];
-  };
-  const getHasOtherPropertiesSales = () => {
-    const all = [...mortgageLeads, ...remortgageLeads];
-    const yes = all.filter(l => { const b = l.fields['Current BTLs (Sales)']; return b && (b === '1' || b === '2' || b === '3' || b === '4' || b === '5+' || parseInt(b) > 0); }).length;
-    const no = all.filter(l => { const b = l.fields['Current BTLs (Sales)']; return !b || b === '0' || parseInt(b) === 0; }).length;
-    return [{ name: 'Yes', value: yes }, { name: 'No', value: no }];
-  };
-  const getMortgageStageDataSales = () => ['Looking for a Property', 'Found a Property', 'Made an offer', 'Paid a deposit'].map(stage => ({
-    stage: stage.replace('Looking for a Property', 'Looking').replace('Found a Property', 'Found').replace('Made an offer', 'Offer').replace('Paid a deposit', 'Paid Deposit'),
-    total: mortgageLeads.filter(l => l.fields['Stage (Sales)'] === stage).length,
-    answered: mortgageLeads.filter(l => l.fields['Stage (Sales)'] === stage && l.fields['Phone Answered']).length
-  }));
-  const getRemortgageStageDataSales = () => [
-    { variants: ['Rate Shopping'], label: 'Rate Shop' },
-    { variants: ['Within next 6 months'], label: '6 months' },
-    { variants: ['Within next 3 months'], label: '3 months' },
-    { variants: ['ASAP'], label: 'ASAP' },
-  ].map(({ variants, label }) => ({
-    stage: label,
-    total: remortgageLeads.filter(l => variants.includes(l.fields['Stage (Sales)'])).length,
-    answered: remortgageLeads.filter(l => variants.includes(l.fields['Stage (Sales)']) && l.fields['Phone Answered']).length
-  }));
-  const get25PercentDeposit = () => [
-    { name: '25%+ Deposit', value: mortgageLeads.filter(l => normalisePercent(l.fields['Deposit %']) >= 25).length },
-    { name: 'Under 25%', value: mortgageLeads.filter(l => normalisePercent(l.fields['Deposit %']) < 25).length }
-  ];
-  const getRemortgageLTV = () => [
-    { name: '75% or Below', value: remortgageLeads.filter(l => normalisePercent(l.fields['LTV']) <= 75).length },
-    { name: 'Above 75%', value: remortgageLeads.filter(l => normalisePercent(l.fields['LTV']) > 75).length }
-  ];
-  const getMortgagePropertyRanges = () => {
-    const ranges = { '0-100k': 0, '100k-200k': 0, '200k-300k': 0, '300k-400k': 0, '400k-500k': 0, '500k+': 0 };
-    mortgageLeads.forEach(l => { const a = parseFloat(l.fields['Loan Amount']); if (!a) return; if (a < 100000) ranges['0-100k']++; else if (a < 200000) ranges['100k-200k']++; else if (a < 300000) ranges['200k-300k']++; else if (a < 400000) ranges['300k-400k']++; else if (a < 500000) ranges['400k-500k']++; else ranges['500k+']++; });
-    return Object.keys(ranges).map(k => ({ range: k, count: ranges[k] }));
-  };
-  const getRemortgagePropertyRanges = () => {
-    const ranges = { '0-100k': 0, '100k-200k': 0, '200k-300k': 0, '300k-400k': 0, '400k-500k': 0, '500k+': 0 };
-    remortgageLeads.forEach(l => { const a = parseFloat(l.fields['Property Value']); if (!a) return; if (a < 100000) ranges['0-100k']++; else if (a < 200000) ranges['100k-200k']++; else if (a < 300000) ranges['200k-300k']++; else if (a < 400000) ranges['300k-400k']++; else if (a < 500000) ranges['400k-500k']++; else ranges['500k+']++; });
-    return Object.keys(ranges).map(k => ({ range: k, count: ranges[k] }));
-  };
+  const getDirectorOwnerSales = () => { const a = [...mortgageLeads, ...remortgageLeads]; return [{ name: 'Yes', value: a.filter(l => l.fields['Director (Sales)'] === 'Yes').length }, { name: 'No', value: a.filter(l => l.fields['Director (Sales)'] === 'No').length }]; };
+  const getHasOtherPropertiesSales = () => { const a = [...mortgageLeads, ...remortgageLeads]; return [{ name: 'Yes', value: a.filter(l => { const b = l.fields['Current BTLs (Sales)']; return b && (b === '1' || b === '2' || b === '3' || b === '4' || b === '5+' || parseInt(b) > 0); }).length }, { name: 'No', value: a.filter(l => { const b = l.fields['Current BTLs (Sales)']; return !b || b === '0' || parseInt(b) === 0; }).length }]; };
+  const getMortgageStageDataSales = () => ['Looking for a Property', 'Found a Property', 'Made an offer', 'Paid a deposit'].map(s => ({ stage: s.replace('Looking for a Property', 'Looking').replace('Found a Property', 'Found').replace('Made an offer', 'Offer').replace('Paid a deposit', 'Paid Deposit'), total: mortgageLeads.filter(l => l.fields['Stage (Sales)'] === s).length, answered: mortgageLeads.filter(l => l.fields['Stage (Sales)'] === s && l.fields['Phone Answered']).length }));
+  const getRemortgageStageDataSales = () => [{ variants: ['Rate Shopping'], label: 'Rate Shop' }, { variants: ['Within next 6 months'], label: '6 months' }, { variants: ['Within next 3 months'], label: '3 months' }, { variants: ['ASAP'], label: 'ASAP' }].map(({ variants, label }) => ({ stage: label, total: remortgageLeads.filter(l => variants.includes(l.fields['Stage (Sales)'])).length, answered: remortgageLeads.filter(l => variants.includes(l.fields['Stage (Sales)']) && l.fields['Phone Answered']).length }));
+  const get25PercentDeposit = () => [{ name: '25%+ Deposit', value: mortgageLeads.filter(l => normalisePercent(l.fields['Deposit %']) >= 25).length }, { name: 'Under 25%', value: mortgageLeads.filter(l => normalisePercent(l.fields['Deposit %']) < 25).length }];
+  const getRemortgageLTV = () => [{ name: '75% or Below', value: remortgageLeads.filter(l => normalisePercent(l.fields['LTV']) <= 75).length }, { name: 'Above 75%', value: remortgageLeads.filter(l => normalisePercent(l.fields['LTV']) > 75).length }];
+  const getMortgagePropertyRanges = () => { const r = { '0-100k': 0, '100k-200k': 0, '200k-300k': 0, '300k-400k': 0, '400k-500k': 0, '500k+': 0 }; mortgageLeads.forEach(l => { const a = parseFloat(l.fields['Loan Amount']); if (!a) return; if (a < 100000) r['0-100k']++; else if (a < 200000) r['100k-200k']++; else if (a < 300000) r['200k-300k']++; else if (a < 400000) r['300k-400k']++; else if (a < 500000) r['400k-500k']++; else r['500k+']++; }); return Object.keys(r).map(k => ({ range: k, count: r[k] })); };
+  const getRemortgagePropertyRanges = () => { const r = { '0-100k': 0, '100k-200k': 0, '200k-300k': 0, '300k-400k': 0, '400k-500k': 0, '500k+': 0 }; remortgageLeads.forEach(l => { const a = parseFloat(l.fields['Property Value']); if (!a) return; if (a < 100000) r['0-100k']++; else if (a < 200000) r['100k-200k']++; else if (a < 300000) r['200k-300k']++; else if (a < 400000) r['300k-400k']++; else if (a < 500000) r['400k-500k']++; else r['500k+']++; }); return Object.keys(r).map(k => ({ range: k, count: r[k] })); };
 
   const getFilteredLeads = (leads) => {
-    let filtered = leads;
-
-    // Apply active/all filter
-    if (leadsFilter === 'active') {
-      filtered = filtered.filter(l => !l.fields['Dead']);
-    }
-
-    // Apply search
+    let filtered = leadsFilter === 'active' ? leads.filter(l => !l.fields['Dead']) : leads;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       let altQ = null;
@@ -290,7 +226,6 @@ const App = () => {
         return `${fn} ${ln}`.includes(q) || fn.includes(q) || ln.includes(q) || ph.includes(q) || (altQ && ph.includes(altQ));
       });
     }
-
     return filtered;
   };
 
@@ -300,11 +235,7 @@ const App = () => {
   const thresholdPieColors = ['#2BB4A0', '#FF3366'];
   const chartColors = { primary: '#FF3366', secondary: '#3c3c3c' };
   const remortgageChartColors = { primary: '#2BB4A0', secondary: '#3c3c3c' };
-
-  const hexToRgba = (hex, alpha) => {
-    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r},${g},${b},${alpha})`;
-  };
+  const hexToRgba = (hex, alpha) => { const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16); return `rgba(${r},${g},${b},${alpha})`; };
   const getGradientStyle = (color, opacity) => ({ backgroundColor: hexToRgba(color, opacity), borderColor: color });
 
   const renderCustomLabel = ({ cx, cy, midAngle, outerRadius, percent, name }) => {
@@ -325,7 +256,7 @@ const App = () => {
     const currentBTLs = lead.fields['Current BTLs (Sales)'] !== undefined && lead.fields['Current BTLs (Sales)'] !== null ? String(lead.fields['Current BTLs (Sales)']) : '';
 
     return (
-      <tr key={lead.id} style={{ opacity: isDead ? 0.45 : 1, background: isDead ? '#fff5f5' : 'transparent' }}>
+      <tr key={lead.id} style={{ opacity: isDead ? 0.4 : 1, background: isDead ? '#fff5f5' : 'transparent' }}>
         <td>{lead.fields.First_Name && lead.fields.Last_Name ? `${lead.fields.First_Name} ${lead.fields.Last_Name}`.trim() : lead.fields.First_Name || lead.fields.Last_Name || 'No name'}</td>
         <td>{lead.fields.Date ? new Date(lead.fields.Date).toLocaleDateString('en-GB') : 'N/A'}</td>
         <td><span className={`badge ${lead.type.toLowerCase()}`}>{lead.type}</span></td>
@@ -350,9 +281,7 @@ const App = () => {
           </select>
         </td>
         <td>
-          {!isDead && !ready && (
-            <span style={{ fontSize: '11px', color: '#999', fontStyle: 'italic' }}>Fill Stage, Director & BTLs first</span>
-          )}
+          {!isDead && !ready && <span style={{ fontSize: '11px', color: '#999', fontStyle: 'italic' }}>Fill Stage, Director & BTLs first</span>}
           {!isDead && ready && (
             <>
               <button disabled={lead.fields['Phone Answered']} onClick={() => handleLeadAction(lead.id, lead.type, 'Phone Answered', lead.fields['Phone Answered'])} className="action-btn">
@@ -366,13 +295,16 @@ const App = () => {
               </button>
             </>
           )}
-          {/* Dead button — always visible */}
+          {isDead && <span style={{ fontSize: '11px', color: '#e53935', fontStyle: 'italic' }}>Dead</span>}
+        </td>
+        {/* Dead button in its own column */}
+        <td style={{ textAlign: 'center', width: '44px' }}>
           <button
             onClick={() => handleLeadAction(lead.id, lead.type, 'Dead', lead.fields['Dead'])}
-            className={`action-btn dead-btn${isDead ? ' dead-active' : ''}`}
-            title={isDead ? 'Mark as Active' : 'Mark as Dead'}
+            className={`dead-btn${isDead ? ' dead-active' : ''}`}
+            title={isDead ? 'Revive lead' : 'Mark as dead'}
           >
-            {isDead ? '↩ Revive' : '✕ Dead'}
+            {isDead ? '↩' : '✕'}
           </button>
         </td>
       </tr>
@@ -416,7 +348,6 @@ const App = () => {
     const btlData = chartDataSource === 'form' ? getHasOtherProperties() : getHasOtherPropertiesSales();
     const mortgageStageData = chartDataSource === 'form' ? getMortgageStageData() : getMortgageStageDataSales();
     const remortgageStageData = chartDataSource === 'form' ? getRemortgageStageData() : getRemortgageStageDataSales();
-
     return (
       <>
         <div className="chart-toggle-header">
@@ -427,39 +358,21 @@ const App = () => {
           </div>
         </div>
         <div className="charts-grid-3">
-          <div className="chart-card"><h3>Mortgage vs Remortgage</h3>
-            <ResponsiveContainer width="100%" height={280}><PieChart><Pie data={getMortgageVsRemortgage()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>{getMortgageVsRemortgage().map((e, i) => <Cell key={i} fill={pieColors[i]} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer>
-          </div>
-          <div className="chart-card"><h3>Director/Owner{chartDataSource === 'sales' ? ' (Sales)' : ''}</h3>
-            <ResponsiveContainer width="100%" height={280}><PieChart><Pie data={directorData} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>{directorData.map((e, i) => <Cell key={i} fill={binaryPieColors[i]} stroke="#ddd" strokeWidth={i === 1 ? 1 : 0} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer>
-          </div>
-          <div className="chart-card"><h3>Has Other Properties{chartDataSource === 'sales' ? ' (Sales)' : ''}</h3>
-            <ResponsiveContainer width="100%" height={280}><PieChart><Pie data={btlData} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>{btlData.map((e, i) => <Cell key={i} fill={binaryPieColors[i]} stroke="#ddd" strokeWidth={i === 1 ? 1 : 0} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer>
-          </div>
+          <div className="chart-card"><h3>Mortgage vs Remortgage</h3><ResponsiveContainer width="100%" height={280}><PieChart><Pie data={getMortgageVsRemortgage()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>{getMortgageVsRemortgage().map((e,i) => <Cell key={i} fill={pieColors[i]} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer></div>
+          <div className="chart-card"><h3>Director/Owner{chartDataSource === 'sales' ? ' (Sales)' : ''}</h3><ResponsiveContainer width="100%" height={280}><PieChart><Pie data={directorData} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>{directorData.map((e,i) => <Cell key={i} fill={binaryPieColors[i]} stroke="#ddd" strokeWidth={i===1?1:0} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer></div>
+          <div className="chart-card"><h3>Has Other Properties{chartDataSource === 'sales' ? ' (Sales)' : ''}</h3><ResponsiveContainer width="100%" height={280}><PieChart><Pie data={btlData} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>{btlData.map((e,i) => <Cell key={i} fill={binaryPieColors[i]} stroke="#ddd" strokeWidth={i===1?1:0} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer></div>
         </div>
         <div className="charts-grid">
-          <div className="chart-card"><h3>Deposit Status (Mortgage)</h3>
-            <ResponsiveContainer width="100%" height={280}><PieChart><Pie data={get25PercentDeposit()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>{get25PercentDeposit().map((e, i) => <Cell key={i} fill={thresholdPieColors[i]} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer>
-          </div>
-          <div className="chart-card"><h3>LTV Status (Remortgage)</h3>
-            <ResponsiveContainer width="100%" height={280}><PieChart><Pie data={getRemortgageLTV()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>{getRemortgageLTV().map((e, i) => <Cell key={i} fill={thresholdPieColors[i]} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer>
-          </div>
+          <div className="chart-card"><h3>Deposit Status (Mortgage)</h3><ResponsiveContainer width="100%" height={280}><PieChart><Pie data={get25PercentDeposit()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>{get25PercentDeposit().map((e,i) => <Cell key={i} fill={thresholdPieColors[i]} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer></div>
+          <div className="chart-card"><h3>LTV Status (Remortgage)</h3><ResponsiveContainer width="100%" height={280}><PieChart><Pie data={getRemortgageLTV()} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={renderCustomLabel} labelLine={{ stroke: '#3c3c3c', strokeWidth: 1 }}>{getRemortgageLTV().map((e,i) => <Cell key={i} fill={thresholdPieColors[i]} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer></div>
         </div>
         <div className="charts-grid">
-          <div className="chart-card"><h3>Mortgage Stages{chartDataSource === 'sales' ? ' (Sales)' : ''}</h3>
-            <ResponsiveContainer width="100%" height={250}><BarChart data={mortgageStageData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="stage" /><YAxis allowDecimals={false} /><Tooltip /><Legend /><Bar dataKey="total" fill={chartColors.primary} name="Total" /><Bar dataKey="answered" fill={chartColors.secondary} name="Answered" /></BarChart></ResponsiveContainer>
-          </div>
-          <div className="chart-card"><h3>Remortgage Stages{chartDataSource === 'sales' ? ' (Sales)' : ''}</h3>
-            <ResponsiveContainer width="100%" height={250}><BarChart data={remortgageStageData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="stage" /><YAxis allowDecimals={false} /><Tooltip /><Legend /><Bar dataKey="total" fill={remortgageChartColors.primary} name="Total" /><Bar dataKey="answered" fill={remortgageChartColors.secondary} name="Answered" /></BarChart></ResponsiveContainer>
-          </div>
+          <div className="chart-card"><h3>Mortgage Stages{chartDataSource === 'sales' ? ' (Sales)' : ''}</h3><ResponsiveContainer width="100%" height={250}><BarChart data={mortgageStageData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="stage" /><YAxis allowDecimals={false} /><Tooltip /><Legend /><Bar dataKey="total" fill={chartColors.primary} name="Total" /><Bar dataKey="answered" fill={chartColors.secondary} name="Answered" /></BarChart></ResponsiveContainer></div>
+          <div className="chart-card"><h3>Remortgage Stages{chartDataSource === 'sales' ? ' (Sales)' : ''}</h3><ResponsiveContainer width="100%" height={250}><BarChart data={remortgageStageData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="stage" /><YAxis allowDecimals={false} /><Tooltip /><Legend /><Bar dataKey="total" fill={remortgageChartColors.primary} name="Total" /><Bar dataKey="answered" fill={remortgageChartColors.secondary} name="Answered" /></BarChart></ResponsiveContainer></div>
         </div>
         <div className="charts-grid">
-          <div className="chart-card"><h3>Mortgage Property Value</h3>
-            <ResponsiveContainer width="100%" height={250}><BarChart data={getMortgagePropertyRanges()}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="range" /><YAxis allowDecimals={false} /><Tooltip /><Bar dataKey="count" fill={chartColors.primary} /></BarChart></ResponsiveContainer>
-          </div>
-          <div className="chart-card"><h3>Remortgage Property Value</h3>
-            <ResponsiveContainer width="100%" height={250}><BarChart data={getRemortgagePropertyRanges()}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="range" /><YAxis allowDecimals={false} /><Tooltip /><Bar dataKey="count" fill="#2BB4A0" /></BarChart></ResponsiveContainer>
-          </div>
+          <div className="chart-card"><h3>Mortgage Property Value</h3><ResponsiveContainer width="100%" height={250}><BarChart data={getMortgagePropertyRanges()}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="range" /><YAxis allowDecimals={false} /><Tooltip /><Bar dataKey="count" fill={chartColors.primary} /></BarChart></ResponsiveContainer></div>
+          <div className="chart-card"><h3>Remortgage Property Value</h3><ResponsiveContainer width="100%" height={250}><BarChart data={getRemortgagePropertyRanges()}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="range" /><YAxis allowDecimals={false} /><Tooltip /><Bar dataKey="count" fill="#2BB4A0" /></BarChart></ResponsiveContainer></div>
         </div>
       </>
     );
@@ -467,28 +380,29 @@ const App = () => {
 
   const renderLeadsTable = (leads, title) => {
     const filtered = getFilteredLeads(leads);
-    const totalActive = leads.filter(l => !l.fields['Dead']).length;
-    const totalAll = leads.length;
-
+    const activeCount = leads.filter(l => !l.fields['Dead']).length;
     return (
       <div className="leads-table-card">
         <div className="leads-table-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-            <h3>{title} ({filtered.length}{searchQuery ? ` of ${leadsFilter === 'active' ? totalActive : totalAll}` : leadsFilter === 'active' ? ` of ${totalActive} active` : ` of ${totalAll}`})</h3>
+            <h3>{title} ({filtered.length})</h3>
             <div className="chart-toggle">
-              <button className={`toggle-btn${leadsFilter === 'active' ? ' active' : ''}`} onClick={() => setLeadsFilter('active')}>Active</button>
-              <button className={`toggle-btn${leadsFilter === 'all' ? ' active' : ''}`} onClick={() => setLeadsFilter('all')}>All</button>
+              <button className={`toggle-btn${leadsFilter === 'active' ? ' active' : ''}`} onClick={() => setLeadsFilter('active')}>Active ({activeCount})</button>
+              <button className={`toggle-btn${leadsFilter === 'all' ? ' active' : ''}`} onClick={() => setLeadsFilter('all')}>All ({leads.length})</button>
             </div>
           </div>
           <input type="text" className="leads-search" placeholder="Search by name or phone number..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
         </div>
         <table>
           <thead>
-            <tr><th>Name</th><th>Date</th><th>Type</th><th>Phone</th><th>Stage</th><th>Director?</th><th>BTLs</th><th>Actions</th></tr>
+            <tr>
+              <th>Name</th><th>Date</th><th>Type</th><th>Phone</th>
+              <th>Stage</th><th>Director?</th><th>BTLs</th><th>Actions</th><th></th>
+            </tr>
           </thead>
           <tbody>
             {filtered.length === 0
-              ? <tr><td colSpan="8" style={{textAlign:'center',padding:'40px'}}>{searchQuery ? 'No leads match your search' : leadsFilter === 'active' ? 'No active leads for this period' : 'No leads for this period'}</td></tr>
+              ? <tr><td colSpan="9" style={{textAlign:'center',padding:'40px'}}>{searchQuery ? 'No leads match your search' : leadsFilter === 'active' ? 'No active leads for this period' : 'No leads for this period'}</td></tr>
               : filtered.map(l => renderLeadRow(l))
             }
           </tbody>
@@ -567,7 +481,6 @@ const App = () => {
     <div className="dashboard">
       <div className="header"><img src="/lendscope-logo.png" alt="LendScope Logo" className="logo-image" />{headerControls}</div>
       {datePickerModal}
-
       <h2>Lead Cost Analysis</h2>
       <div className="metrics-grid">
         {[
@@ -582,7 +495,6 @@ const App = () => {
           </div>
         ))}
       </div>
-
       {renderSalesPerformance()}
       {renderCharts()}
       {renderLeadsTable(displayLeads, 'All Leads for Selected Period')}
